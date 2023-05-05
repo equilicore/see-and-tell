@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "cntell"
+version = "0.0.1b"
+description = "See and Tell: Describe Visual Content"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+transformers = "^4.28.1"
+torch = "^2.0.0"
+pillow = "^9.5.0"
+pytest = "^7.3.1"
+pyannote-audio = {url = "https://github.com/pyannote/pyannote-audio/archive/refs/heads/develop.zip"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
