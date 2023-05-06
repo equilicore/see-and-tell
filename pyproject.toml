@@ -6,12 +6,15 @@ authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.11"
 transformers = "^4.28.1"
 torch = "^2.0.0"
 pillow = "^9.5.0"
 pytest = "^7.3.1"
 pyannote-audio = {url = "https://github.com/pyannote/pyannote-audio/archive/refs/heads/develop.zip"}
+datasets = "^2.12.0"
+ffmpegio = "^0.8.3"
+ffmpeg-python = "^0.2.0"
 
 
 [build-system]
