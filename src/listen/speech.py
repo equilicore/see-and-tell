@@ -11,7 +11,7 @@ class SpeechDetector:
             **kwargs
         ) -> None:
         """Initialize the SpeechDetector class."""
-        self.logger = get_pipeline_logger("SpeechDetector")
+        self.logger = get_pipeline_logger("SpeechDetector", 'purple')
         self.logger.info("Initialized SpeechDetector")
         self.pipeline = VoiceActivityDetection(segmentation=model_name)
         self.pipeline.instantiate(kwargs)
@@ -27,10 +27,10 @@ class SpeechDetector:
             list[tuple[float, float]]: A list of tuples containing the start and end times of each speech segment.
         """
         self.logger.info(f"Loading audio from {audio}")
-        self.logger.info(f"Detecting speech")
-        speech_segments = self.pipeline(audio)
-        self.logger.info(f"Detected speech: {speech_segments}")
-        return list(speech_segments.get_timeline())
+        self.logger.info(f"Detecting segment with no speech")
+        speech_segments = list(self.pipeline(audio).get_timeline())
+        self.logger.info(f"Detected no speech in {len(speech_segments)} segments")
+        return speech_segments
     
 
 if __name__ == "__main__":
