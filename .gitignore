@@ -1,10 +1,7 @@
 __pycache__
 .pytest_cache
-<<<<<<< HEAD
 cropped_images
 dataset
-=======
 *.png
 *.mp3
 .temp
->>>>>>> 19d0d85ab89f32a4948fd04cf02e73a71e0bce63

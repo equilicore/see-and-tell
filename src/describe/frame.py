@@ -6,7 +6,7 @@ import PIL
 import numpy as np
 
 from transformers import AutoProcessor, AutoModelForCausalLM, PegasusForConditionalGeneration, PegasusTokenizer
-from ..log import get_pipeline_logger
+from src.log import get_pipeline_logger
 
 class FrameDescriptor:
     def __init__(
