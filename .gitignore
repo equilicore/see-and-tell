@@ -6,3 +6,4 @@ dataset
 *.mp3
 .temp
 *.pickle
+*.zip
