@@ -16,7 +16,7 @@ HOME = os.getcwd()
 
 from facenet_pytorch import MTCNN, InceptionResnetV1
 # global variable used as the default face detection model
-FACE_DETECTION = MTCNN(image_size=RESIZE, keep_all=True, post_process=True, margin=40)
+FACE_DETECTION = MTCNN(image_size=RESIZE, keep_all=True, post_process=True, )
 # global variable used as the default encoder
 ENCODER = InceptionResnetV1(pretrained='vggface2').eval()
 
@@ -89,13 +89,13 @@ from torchvision import transforms as T
 import matplotlib.pyplot as plt
 
 
-CONFIDENCE_THRESHOLD = 0.8
-REPORT_THRESHOLD = 0.3
+CONFIDENCE_THRESHOLD = 0.6
+REPORT_THRESHOLD = 0.2
 
 from .helper_functions  import cosine_similarity
 
 
-def recognize_faces(image: Union[str, Path, np.array], embeddings: Union[str, Path], possible_classes: Sequence,
+def recognize_faces(image: Union[str, Path, np.array], embeddings: Union[str, Path], possible_classes: Sequence=None,
                     resize:int=RESIZE, face_detection=None, encoder=None, keep_all=True, 
                    confidence_threshold:float=CONFIDENCE_THRESHOLD, report_threshold:float=REPORT_THRESHOLD, 
                    save_faces:bool=False, save_path:str=None, display:bool=False) -> list[list]:
@@ -111,7 +111,11 @@ def recognize_faces(image: Union[str, Path, np.array], embeddings: Union[str, Pa
     if isinstance(embeddings, str) or isinstance(embeddings, Path):
         with open(embeddings, 'r') as f:
             embeddings = json.load(f)
-   
+    
+    # set the values of the possible classes if needed
+    if possible_classes is None:
+        possible_classes = list(embeddings.keys())
+
     # extract the needed classes and save them in a dictionary
     embeddings = dict([(p_c, np.asarray(embeddings[p_c])) for p_c in possible_classes])
     

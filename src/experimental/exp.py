@@ -15,13 +15,7 @@ def get_caption(image_path: str, use_gpu: bool):
     try:
         # Test image description using image path
         desc1 = frame_desc.describe_batch(image_path, )
-        assert isinstance(desc1, str)
-
-        # Test image description using PyTorch tensor
-        img_tensor = torch.FloatTensor(3, 224, 224).uniform_(0, 1)
-        desc2 = frame_desc(img_tensor)
+        # assert isinstance(desc1, str)
         return desc1
-        assert isinstance(desc2, str)
-
     finally:
         pass
