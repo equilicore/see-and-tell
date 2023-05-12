@@ -1,5 +1,4 @@
 import argparse
-import logging
 import tempfile
 import soundfile as sf
 import pyttsx3
@@ -10,7 +9,7 @@ class SpeechToText:
         """Initialize the AudioCaptionDescriber class."""
         self.engine = pyttsx3.init()
         self.processing_dir = tempfile.TemporaryDirectory()
-        self.engine.setProperty('rate', 300)
+        self.engine.setProperty('rate', 600)
         self.logger = get_pipeline_logger("SpeechToText", "blue")
         self.logger.info("Initialized SpeechToText")
 
@@ -24,12 +23,12 @@ class SpeechToText:
         Returns:
             str: The path to the saved audio file.
         """
-        logging.info(f"Generating audio from caption {caption} ...")
+        self.logger.info(f"Generating audio from caption {caption} ...")
         file = self.processing_dir.name + "/audio.wav"
         self.engine.save_to_file(caption, file)
         self.engine.runAndWait()
         speech, _ = sf.read(file)
-        logging.info(f"Generated audio from caption: {caption}")
+        self.logger.info(f"Generated audio from caption: {caption}")
         return speech
     
 

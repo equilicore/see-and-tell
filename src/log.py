@@ -1,5 +1,4 @@
 import logging
-
 import colorlog
 
 
@@ -16,7 +15,8 @@ def get_pipeline_logger(component_name: str, component_color: str) -> logging.Lo
     Returns:
         logging.Logger: The logger for the component.
     """
-
+    
+    # Check whether logger is already configured
     logger = logging.getLogger(component_name)
     logger.setLevel(logging.INFO)
     # Remove all handlers associated with the logger    

@@ -130,10 +130,12 @@ def mix_video_and_audio(
         audio_starts (list[int]): A list of the start times of the audio files.
         output_file (str): The path to save the output file to.
     """
+    sample_rate = 16000
+
     audio_starts = [segment[0] for segment in segments]
     audio_lengths = [segment[1] - segment[0] for segment in segments]
     length = get_length_of_video(video_file)
-    audio = np.zeros(((length + 1) * 16000))
+    audio = np.zeros(((length + 1) * sample_rate))
     for i in range(len(audio_array)):
     #     current_length = audio_array[i].shape[0]
     #     if audio_array[i].shape[0] > audio_lengths[i] * 16000:
@@ -145,9 +147,9 @@ def mix_video_and_audio(
     #         slice = (audio_starts[i] * 16000, (audio_starts[i] + audio_lengths[i]) * 16000)
     #     else: 
         compressed = audio_array[i]
-        if compressed.shape[0] > audio_lengths[i] * 16000:
-            compressed = compressed[:audio_lengths[i] * 16000]
-        slice = (audio_starts[i] * 16000, audio_starts[i] * 16000 + compressed.shape[0])
+        if compressed.shape[0] > audio_lengths[i] * sample_rate:
+            compressed = compressed[:audio_lengths[i] * sample_rate]
+        slice = (audio_starts[i] * sample_rate, audio_starts[i] * sample_rate + compressed.shape[0])
         audio[slice[0]:slice[1]] += compressed
 
     soundfile.write(output_file + " [Audio].mp3", audio, 16000)
