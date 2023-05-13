@@ -1,4 +1,5 @@
 from collections import Counter
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -175,6 +176,8 @@ def replace_with_char_names(captions: list[str], face_predictions: list[list[lis
     # nps = extract_NP_text("\n".join(captions), plain_text=False)
     nps = extract_NP_text(captions)
 
+    assert len(nps) == len(face_predictions), \
+        f"Length of filtered_text_nps ({len(nps)}) is not equal to the length of face_predictions ({len(face_predictions)})"
     # first extract the captions as plain text
     plain_nps = [[convert_to_text(t, filter=False) for t in component] for component in nps]
 
@@ -184,10 +187,15 @@ def replace_with_char_names(captions: list[str], face_predictions: list[list[lis
     # time to build the matrix
     class_np_counter, np_class_counter = build_captions_class_matrix(filtered_text_nps, face_predictions)
     # find the decided captions
-    decisive_class_np_counter = find_decided_captions(filtered_text_nps, face_predictions)
+    try:
+        decisive_class_np_counter = find_decided_captions(filtered_text_nps, face_predictions)
+    except:
+        warnings.warn("An error occured while trying to find the decided captions.")
+        return captions
     # iterate through each of the predictions and captions
     final_captions = []
-    
+    assert len(filtered_text_nps) == len(face_predictions), \
+        f"Length of filtered_text_nps ({len(filtered_text_nps)}) is not equal to the length of face_predictions ({len(face_predictions)})"
     for np_list_index, (np_list, pred_list) in enumerate(zip(filtered_text_nps, face_predictions)):    
         # map the noun phrase to the suitable class
         mapping = map_np_char_name(np_list, pred_list, class_np_counter, np_class_counter, decisive_class_np_counter)

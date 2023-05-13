@@ -1,7 +1,9 @@
+from collections import defaultdict
 import signal
 from .describe.frame import FrameDescriptor
 from .listen.speech import SpeechDetector
 from .say.caption import SpeechToText
+from .face.who import FaceRecognizer
 from . import utils
 from concurrent import futures
 from multiprocessing import cpu_count
@@ -12,12 +14,15 @@ import os
 import argparse
 import logging
 import atexit
+import torch
 
 
 def init_descriptor() -> FrameDescriptor:
     global descriptor
+
     descriptor = FrameDescriptor(
-        model_name="google/pix2struct-textcaps-base"
+        model_name="microsoft/git-base-textcaps",
+        use_gpu=torch.cuda.is_available(),
     )
 
 def run_descriptor(*args, **kwargs) -> str: 
@@ -26,7 +31,8 @@ def run_descriptor(*args, **kwargs) -> str:
 
         
 class SeeAndTell:
-    def __init__(self, temp_folder: str, cpus: int = 1) -> None:
+
+    def __init__(self, temp_folder: str, cpus: int = 1, embeddings_folder: str = None, use_gpu = False) -> None:
         """Initialize the SeeAndTell class."""
 
         self.descriptor_pool = futures.ProcessPoolExecutor(
@@ -48,12 +54,14 @@ class SeeAndTell:
 
         self.speech_to_text = SpeechToText()
 
+        self.face_detector = FaceRecognizer()
+        if embeddings_folder:
+            self.face_detector.load_series_embeddings(embeddings_folder)
+
         self.temp_folder = temp_folder
         os.makedirs(self.temp_folder, exist_ok=True)
 
-
-
-    def describe_video(self, video: str, save_to: str) -> None:
+    def describe_video(self, video: str, save_to: str, from_series: str = None) -> None:
         # Step 0: Generate a hash for video name
         # and current time to ensure unique folder name
 
@@ -74,35 +82,53 @@ class SeeAndTell:
         # Step 1: Extract frames and audio from video
         frames = utils.split_on_frames(video, get_dir("frames"))
         utils.split_on_audio(video, get_path("audio.mp3"))
-
-        # Step 2: Get segments with no speech
+        frames = [
+            os.path.join(get_dir("frames"), frame) for frame in frames
+        ]
+        # Step 2: Get segments with no speech   
         segments = self.speech_detector(get_path("audio.mp3"))
         segments = utils.get_frames_with_no_speech(
             segments, utils.get_length_of_video(video)
         )
-        print(segments)
         segments = utils.split_segments(segments, 10, 2)
+        segments.sort(key=lambda x: x[0])
+        print(segments)
         # Step 3: Get descriptions for each segment
-        descriptions = []
+        desc_with_faces = []
+
+        frames_to_proceed = [
+            frames[segment[1] - 1]
+            for segment in segments
+        ]
+
         # Describe frames in parallel
-        for segment in segments:
-            descriptions.append(
+        descriptions = {}
+        for frame in frames:
+            descriptions[frame] = (
                 self.descriptor_pool.submit(
                     run_descriptor,
-                    os.path.join(get_dir("frames"), frames[segment[0]]),
-                    8 * (segment[1] - segment[0]),
+                    frame,
                 )
             )
 
-            # descriptions.append(
-            #     self.descriptor(
-            #         os.path.join(get_dir("frames"), frames[segment[0]]),
-            #         4 * (segment[1] - segment[0]),
-            #     )
-            # )
+        #     # descriptions.append(
+        #     #     self.descriptor(
+        #     #         os.path.join(get_dir("frames"), frames[segment[0]]),
+        #     #         4 * (segment[1] - segment[0]),
+        #     #     )
+        #     # )
         
+        descriptions = {i: d.result().lower() for i, d in descriptions.items()}
 
-        descriptions = [description.result() for description in descriptions]
+        desc_with_faces = self.face_detector(
+            list(descriptions.keys()), 
+            list(descriptions.values()),
+        from_series)
+        print(len(desc_with_faces), len(descriptions))
+        descriptions = {k: desc_with_faces[i] for i, k in enumerate(descriptions.keys())}
+        descriptions = [descriptions[i] for i in frames_to_proceed]
+        print(descriptions)
+        # descriptions = ["some caption for the video"]
         # Step 4: Produce audio for each description
         audio_arrays = []
         for description in descriptions:
@@ -118,20 +144,21 @@ class SeeAndTell:
 #         handlers=[logging.StreamHandler()]
 # )
 
-if __name__ == "__main__":
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("video", help="The path to the video to describe.")
-    argparser.add_argument("output", help="The path to save the output video to.")
-    argparser.add_argument("--temp", help="The path to save temporary files to.", default=".temp")
-    argparser.add_argument("--cpus", help="The number of cpus to use.", type=int, default=1)
-    args = argparser.parse_args()
-
-    see_and_tell = SeeAndTell(args.temp, args.cpus or cpu_count())
+def run_pipeline(
+        video: str,
+        output: str,
+        temporary_folder: str,
+        cpus: int = 1,
+        serie: str = None
+):
+    """Run the pipeline on a video."""
+    see_and_tell = SeeAndTell(temporary_folder, cpus, serie)
 
     def signal_handler(signum, frame):
         print("Caught keyboard interrupt, cancelling pending tasks...")
-        see_and_tell.descriptor_pools.shutdown(wait=False)
+        see_and_tell.descriptor_pool.shutdown(wait=False)
         raise KeyboardInterrupt
     
-    # signal.signal(signal.SIGINT, signal_handler)
-    see_and_tell.describe_video(args.video, args.output)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    see_and_tell.describe_video(video, output, serie)

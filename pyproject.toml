@@ -18,6 +18,13 @@ ffmpeg-python = "^0.2.0"
 scipy = "^1.10.1"
 pyttsx3 = "^2.90"
 colorlog = "^6.7.0"
+opencv-python = "^4.7.0.72"
+moviepy = "^1.0.3"
+torchvision = "^0.15.2"
+facenet-pytorch = "^2.5.3"
+stanza = "^1.5.0"
+nltk = "^3.8.1"
+tts = "^0.13.3"
 
 
 [build-system]

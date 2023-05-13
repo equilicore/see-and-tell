@@ -5,7 +5,7 @@ import torch
 import PIL
 import numpy as np
 
-from transformers import AutoProcessor, Pix2StructForConditionalGeneration
+from transformers import AutoProcessor, AutoModelForCausalLM
 from ..log import get_pipeline_logger
 
 class FrameDescriptor:
@@ -13,7 +13,7 @@ class FrameDescriptor:
             self,
             model_name: str,
             state_dict_path: str=None,
-            use_gpu=True,
+            use_gpu=False,
         ) -> None:
         """Initialize the FrameDescriptor class.
 
@@ -22,7 +22,7 @@ class FrameDescriptor:
             state_dict_path (str, optional): The path to a state dict to load into the model. Defaults to None.
         """
         self.logger = get_pipeline_logger("FrameDescriptor", 'green')
-        self.descriptor_model = Pix2StructForConditionalGeneration.from_pretrained(model_name)
+        self.descriptor_model = AutoModelForCausalLM.from_pretrained(model_name)
         self.processor = AutoProcessor.from_pretrained(model_name)
 
         if state_dict_path:
@@ -32,7 +32,6 @@ class FrameDescriptor:
             self.descriptor_model.cuda()
 
         self.use_gpu = use_gpu
-
         self.logger.info(f"Initialized FrameDescriptor with model {model_name} and state_dict {state_dict_path}")
 
     def describe_batch(self, images: list[str]) -> list[str]:
@@ -64,7 +63,7 @@ class FrameDescriptor:
         return out
     
 
-    def __call__(self, image: torch.Tensor | str, max_description_length=40) -> str:
+    def __call__(self, image: torch.Tensor | str) -> str:
         """Generate a description of the image.
 
         Args:
@@ -86,7 +85,9 @@ class FrameDescriptor:
                 
         self.logger.info(f"Processing image {__image}")
         inputs = self.processor(images=image, return_tensors="pt")
-        out = self.descriptor_model.generate(**inputs, max_length=max_description_length, num_beams=5)
+        if self.use_gpu:
+            inputs = inputs.to("cuda")
+        out = self.descriptor_model.generate(**inputs, num_beams=5)
         out = self.processor.batch_decode(out, skip_special_tokens=True)[0]
         self.logger.info(f"Processed {__image}. Generated description: {out}")
         return out
