@@ -172,7 +172,9 @@ def replace_with_char_names(captions: list[str], face_predictions: list[list[lis
     # first off extract plain names 
     face_predictions = char_names_predictions(face_predictions)
     # extract the nps from the captions
-    nps = extract_NP_text(". ".join([c[:-1] if c[-1] == '.' else c for c in captions]), plain_text=False)
+    # nps = extract_NP_text("\n".join(captions), plain_text=False)
+    nps = extract_NP_text(captions)
+
     # first extract the captions as plain text
     plain_nps = [[convert_to_text(t, filter=False) for t in component] for component in nps]
 

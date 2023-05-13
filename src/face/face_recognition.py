@@ -11,7 +11,7 @@ import torch
 from torchvision.utils import save_image
 import numpy as np
 
-RESIZE = 256
+RESIZE = 160
 HOME = os.getcwd()
 
 from facenet_pytorch import MTCNN, InceptionResnetV1
@@ -90,7 +90,7 @@ import matplotlib.pyplot as plt
 
 
 CONFIDENCE_THRESHOLD = 0.6
-REPORT_THRESHOLD = 0.2
+REPORT_THRESHOLD = 0.25
 
 from .helper_functions  import cosine_similarity
 
@@ -178,7 +178,8 @@ def recognize_faces(image: Union[str, Path, np.array], embeddings: Union[str, Pa
                 print(char)
                 cos = cosine_similarity(emb, f_emb)
                 print(np.mean(cos))
-           
+        print("#" * 100)
+        print("#" * 100)
         
     cos_similarities = [
                         [np.mean(cosine_similarity(emb, fe)) for _, emb in given_embeddings] 
