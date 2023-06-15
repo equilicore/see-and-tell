@@ -16,14 +16,10 @@ import logging
 import atexit
 import torch
 
-
-def init_descriptor() -> FrameDescriptor:
-    global descriptor
-
-    descriptor = FrameDescriptor(
-        model_name="microsoft/git-base-textcaps",
-        use_gpu=torch.cuda.is_available(),
-    )
+descriptor = FrameDescriptor(
+    model_name="microsoft/git-base-textcaps",
+    use_gpu=torch.cuda.is_available(),
+)
 
 def run_descriptor(*args, **kwargs) -> str: 
     global descriptor
@@ -35,10 +31,10 @@ class SeeAndTell:
     def __init__(self, temp_folder: str, cpus: int = 1, embeddings_folder: str = None, use_gpu = False) -> None:
         """Initialize the SeeAndTell class."""
 
-        self.descriptor_pool = futures.ProcessPoolExecutor(
-            max_workers=cpus,
-            initializer=init_descriptor,
-        )
+        # self.descriptor_pool = futures.ProcessPoolExecutor(
+        #     max_workers=cpus,
+        #     initializer=init_descriptor,
+        # )
 
         # self.descriptor = FrameDescriptor(
         #     model_name="microsoft/git-base-textcaps"
@@ -105,10 +101,7 @@ class SeeAndTell:
         descriptions = {}
         for frame in frames:
             descriptions[frame] = (
-                self.descriptor_pool.submit(
-                    run_descriptor,
-                    frame,
-                )
+                run_descriptor(frame)
             )
 
         #     # descriptions.append(
@@ -118,7 +111,7 @@ class SeeAndTell:
         #     #     )
         #     # )
         
-        descriptions = {i: d.result().lower() for i, d in descriptions.items()}
+        descriptions = {i: d.lower() for i, d in descriptions.items()}
 
         desc_with_faces = self.face_detector(
             list(descriptions.keys()), 
@@ -149,14 +142,14 @@ def run_pipeline(
         output: str,
         temporary_folder: str,
         cpus: int = 1,
+        embeddings_folder: str = './embeddings',
         serie: str = None
 ):
     """Run the pipeline on a video."""
-    see_and_tell = SeeAndTell(temporary_folder, cpus, serie)
+    see_and_tell = SeeAndTell(temporary_folder, cpus, embeddings_folder, use_gpu=torch.cuda.is_available())
 
     def signal_handler(signum, frame):
         print("Caught keyboard interrupt, cancelling pending tasks...")
-        see_and_tell.descriptor_pool.shutdown(wait=False)
         raise KeyboardInterrupt
     
     signal.signal(signal.SIGINT, signal_handler)

@@ -2,7 +2,7 @@
 name = "cntell"
 version = "0.0.1b"
 description = "See and Tell: Describe Visual Content"
-authors = ["Your Name <you@example.com>"]
+authors = ["Aleksandr Lobanov <aleksandr.lobanov.official@gmail.com>", "Ayhem Bouabid <a.bouabid@innopolis.university>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -24,8 +24,6 @@ torchvision = "^0.15.2"
 facenet-pytorch = "^2.5.3"
 stanza = "^1.5.0"
 nltk = "^3.8.1"
-tts = "^0.13.3"
-
 
 [build-system]
 requires = ["poetry-core"]

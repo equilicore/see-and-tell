@@ -162,10 +162,13 @@ def convert_to_text(pos_words: list[tuple[str, str]], filter:bool) -> str:
     Returns:
         str: the list converted to text
     """
-    if filter:
-        return " ".join([t[1] for t in pos_words if t[0] in ['NN', 'JJ']]).strip().lower() 
-    return " ".join([t[1] for t in pos_words]).strip().lower()
-
+    try:
+        if filter:
+            return " ".join([t[1] for t in pos_words if t[0] in ['NN', 'JJ']]).strip().lower() 
+        return " ".join([t[1] for t in pos_words]).strip().lower()
+    except:
+        print("Error with converting. Pos words: \n", pos_words)
+        return pos_words
 
 def extract_NP_text(text: Union[str,list], nlp_object=None, plain_text:bool=True, filter:bool=True) -> list[list[str]]:
     """This function given a list of text, will extract all the possible PERON noun phrases in the each text
@@ -188,30 +191,30 @@ def extract_NP_text(text: Union[str,list], nlp_object=None, plain_text:bool=True
     np_components = []
     person_words = set()
 
-    if isinstance(text, str):
+    # if isinstance(text, str):
         # create a doc for the text
         
-        doc = nlp_object(text)
-        print(len(doc.sentences))
-        # iterate through sentences
-        for s in doc.sentences:
-            # the constituency tree
-            tree = s.constituency
-            # the root generally contains redundant information for our purposes
-            c = tree.children[0]
-            meta_data = dict([(w.text.lower(), [w.upos, w.lemma]) for w in s.words]) # the assumption is as follows: if the word is repeated then it is frequent and the lemma and POS tag is the same
-            np_components.append(get_NP_components(c, meta_data, person_words))
+    doc = nlp_object(text)
+    print(len(doc.sentences))
+    # iterate through sentences
+    for s in doc.sentences:
+        # the constituency tree
+        tree = s.constituency
+        # the root generally contains redundant information for our purposes
+        c = tree.children[0]
+        meta_data = dict([(w.text.lower(), [w.upos, w.lemma]) for w in s.words]) # the assumption is as follows: if the word is repeated then it is frequent and the lemma and POS tag is the same
+        np_components.append(get_NP_components(c, meta_data, person_words))
 
-    elif isinstance(text, list):
-        for sentence in text:
-            doc = nlp_object(sentence)
-            for s in doc.sentences:
-                # the constituency tree
-                tree = s.constituency
-                # the root generally contains redundant information for our purposes
-                c = tree.children[0]
-                meta_data = dict([(w.text.lower(), [w.upos, w.lemma]) for w in s.words]) # the assumption is as follows: if the word is repeated then it is frequent and the lemma and POS tag is the same
-                np_components.append(get_NP_components(c, meta_data, person_words))
+    # elif isinstance(text, list):
+    #     for sentence in text:
+    #         doc = nlp_object(sentence)
+    #         for s in doc.sentences:
+    #             # the constituency tree
+    #             tree = s.constituency
+    #             # the root generally contains redundant information for our purposes
+    #             c = tree.children[0]
+    #             meta_data = dict([(w.text.lower(), [w.upos, w.lemma]) for w in s.words]) # the assumption is as follows: if the word is repeated then it is frequent and the lemma and POS tag is the same
+    #             np_components.append(get_NP_components(c, meta_data, person_words))
 
 
     # apply the needed post-processing

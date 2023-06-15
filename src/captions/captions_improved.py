@@ -209,7 +209,7 @@ def replace_with_char_names(captions: list[str], face_predictions: list[list[lis
             # determine the exact text to replace 
             text_to_replace = plain_nps[np_list_index][np_index]
             # replace it in the caption
-            new_caption = new_caption.replace(text_to_replace, face_pred)
+            new_caption = new_caption.replace(text_to_replace, face_pred, 1)
 
         final_captions.append(new_caption)
 
