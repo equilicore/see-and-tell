@@ -7,3 +7,8 @@ dataset
 .temp
 *.pickle
 *.zip
+src/captions_2
+*.txt
+*.ipynb
+*.idea
+cntell_env
