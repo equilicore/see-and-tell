@@ -153,16 +153,17 @@ def map_predictions(noun_phrases: list[list[str]],
         best_pred = list(np_scores.columns)[columns[0]]
 
         # map the best prediction to the best 'noun phrase' as 'str' which is mapped to the noun phrase as 'list'
-        mapping[str_to_tokens[best_np]] = best_pred
+        mapping[best_pred] = str_to_tokens[best_np]
+
         # remove the index and the face from np_scores
         np_scores.drop(columns=best_pred, index=best_np, inplace=True)
 
     return mapping
 
 
-def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -> tuple[list[str], set[int]]:
+def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -> list[str]:
 
-    nps, indices = extract_noun_phrases(captions, select=True)
+    nps = extract_noun_phrases(captions, select=True)
     noun_phrases, filtered_noun_phrases = list(map(list, zip(*nps)))
 
     # now we have the captions and the predictions ready
@@ -186,7 +187,7 @@ def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -
         new_caption = captions[np_list_index]
 
         # for each pair of noun phrase and prediction
-        for np_tokens, pred in mapping.items():
+        for pred, np_tokens in mapping.items():
             # within the different nps in the current noun phrases, find the position 'np'
             np_index = np_list.index(np_tokens)
             # determine the exact text to replace 
@@ -198,4 +199,4 @@ def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -
 
         final_captions.append(new_caption)
 
-    return final_captions, indices
+    return final_captions

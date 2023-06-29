@@ -8,7 +8,7 @@ from stanza.pipeline.core import DownloadMethod
 from nltk.corpus import wordnet as wn
 from typing import Union
 from _collections_abc import Sequence
-from collections import Counter
+import re
 
 HOME = os.getcwd()
 
@@ -32,8 +32,8 @@ def extract_words(tree: stanza.models.constituency.parse_tree.Tree) -> list[tupl
         of a given sentence
     Returns: a list of tuples [token, POS tag]
     """
-    a = 0
     return [x.children[0].label.lower() for x in tree.yield_preterminals()]
+
 
 def is_word_person(word: str, pos_tag: str,
                    similarity_threshold: float = 0.2,
@@ -64,9 +64,9 @@ def is_word_person(word: str, pos_tag: str,
     try:
         # synset uses the first character to represent the POS tag
         possible_meanings = wn.synsets(word, pos=pos_tag.lower()[0])[:furthest_meaning]
-    
+
         for meaning in possible_meanings:
-            sim = meaning.path_similarity(reference) 
+            sim = meaning.path_similarity(reference)
             if sim > similarity_threshold:
                 is_person = True
                 break
@@ -102,10 +102,9 @@ def extract_person_words(noun_phrase_text: list[str], metadata: dict[str, tuple[
         easier understanding and a bug-free implementation"""
         # extract the word's metadata
         pos_tag, lemma = metadata[word]
-        result = pos_tag == 'NOUN' and \
-                 (lemma in known_person_lemmas or 
-                  is_word_person(lemma, pos_tag, reference=PERSON) or 
-                  is_word_person(lemma, pos_tag, reference=PEOPLE))
+        result = pos_tag == 'NOUN' and (lemma in known_person_lemmas
+                                        or is_word_person(lemma, pos_tag, reference=PERSON) or
+                                        is_word_person(lemma, pos_tag, reference=PEOPLE))
 
         # add the lemma to the know_person_words
         if result:
@@ -122,7 +121,6 @@ def extract_person_words(noun_phrase_text: list[str], metadata: dict[str, tuple[
 
 
 def tokens_to_text(tokens: list[str], metadata: dict[str, tuple[str, str]], select: bool = False) -> str:
-
     if select:
         return (" ".join([t for t in tokens if metadata[t] in [NOUN, ADJECTIVE]])).lower().strip()
 
@@ -177,13 +175,27 @@ def __extract_noun_phrases_tree(root: stanza.models.constituency.parse_tree.Tree
     return result
 
 
-def extract_noun_phrases(sentences: Sequence[str],
-                         select: bool = False) -> tuple[list[list[list[str]]], set[int]]:
+def __prepare_str(string: str) -> str:
+    REGEX = r'[^a-zA-Z\d]+$'
+    # make sure to add '.' if the initial string does not end with one
+    string = string + '.' if string[-1] != '.' else string
+    return re.sub(REGEX, '.', string.lower().strip())
 
-    # first, let's convert the sequence of sentences into one piece of text
-    text = ". ".join([s[:-1] if s[-1] == '.' else s for s in sentences])
+
+def __prepare_text(list_str: Sequence[str]) -> str:
+    return " ".join([__prepare_str(s) for s in list_str]).strip()
+
+
+def extract_noun_phrases(sentences: Sequence[str],
+                         select: bool = False) -> list[list[list[str]]]:
+    # first prepare the sentences
+    text = __prepare_text(sentences)
+
     # the produced text will be passed to NLP for processing
     doc = NLP(text)
+    doc_sentences = [s.text.lower().strip() for s in doc.sentences]
+
+    assert len(doc_sentences) == len(sentences)
 
     # define the set of known words
     known_person_words = set()
@@ -208,22 +220,4 @@ def extract_noun_phrases(sentences: Sequence[str],
         return result
 
     # let's save the result of the noun phrases
-    nps = [noun_phrases(s) for s in doc.sentences]
-
-    # the tokenization algorithm might preserve all the sentences initially given. It is necessary
-    # to determine which of the initial sentences were used
-
-    doc_sentences = [s.text.lower().strip() for s in doc.sentences]
-    # convert to a counter
-    doc_sentences = Counter(doc_sentences)
-
-    # iterate through the initial sentences
-    indices = set()
-
-    for index, sentence in enumerate(sentences):
-        s = sentence.lower().strip()
-        if s in doc_sentences:
-            doc_sentences[s] -= 1
-            indices.add(index)
-
-    return nps, indices
+    return [noun_phrases(s) for s in doc.sentences]
