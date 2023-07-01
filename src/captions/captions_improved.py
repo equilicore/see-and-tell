@@ -66,6 +66,10 @@ def find_decided_captions(filtered_noun_phrases: list[list[list[str]]], predicti
     # this function will just return the captions and face_predictions with length 1
     decisive_list = [(noun_phrases[0], p[0]) for noun_phrases, p in zip(filtered_noun_phrases, predictions) if
                      len(noun_phrases) == len(p) == 1]
+    
+    if len(decisive_list) == 0:
+        # return an empty dictionary
+        return {}
 
     # convert the list of tuples to 2 lists
     # nps represents a list of strings 
