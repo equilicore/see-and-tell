@@ -7,3 +7,10 @@ dataset
 .temp
 *.pickle
 *.zip
+src/captions_old
+src/face_2
+*.txt
+*.ipynb
+*.idea
+cntell_env
+*.debug.py

@@ -64,7 +64,6 @@ def get_embeddings(images: list[Union[Path, str]], resize: int=RESIZE, face_dete
     # define a transformation object to resize the face images and convert them to tensor
     # resize_transformation = T.Resize(size=resize)
     transformations = T.Compose([T.Resize(size=resize)])
-    print(face_images[0].shape)
 
     # resize each face image and convert it to a Tensor.
     final_face_images = torch.stack([transformations(img) for img in face_images]).to(torch.float32)
@@ -98,7 +97,7 @@ from .helper_functions  import cosine_similarity
 def recognize_faces(image: Union[str, Path, np.array], embeddings: Union[str, Path], possible_classes: Sequence=None,
                     resize:int=RESIZE, face_detection=None, encoder=None, keep_all=True, 
                    confidence_threshold:float=CONFIDENCE_THRESHOLD, report_threshold:float=REPORT_THRESHOLD, 
-                   save_faces:bool=False, save_path:str=None, display:bool=False) -> list[list]:
+                   save_faces:bool=False, save_path:str=None, display:bool=False, return_bbox: bool = False) -> list[list]:
 
     """This function, given an image and object representing the embeddings, can detect face images by producing bounding boxes and
     classify them according to the given embeddings .
@@ -211,8 +210,11 @@ def recognize_faces(image: Union[str, Path, np.array], embeddings: Union[str, Pa
     # the final result will simply the elements whose list-indices belong the set "used_indices"
     filtered_result = [(best_character_index, bbox) for i, (best_character_index, _, bbox) in enumerate(indices_sim_boxes) if i in used_indices]
 
-    return [[given_embeddings[best_character_index][0], bbox] for (best_character_index, bbox) in filtered_result]
-    
+    if return_bbox: 
+        return [[given_embeddings[best_character_index][0], bbox] for (best_character_index, bbox) in filtered_result]
+
+    return [given_embeddings[best_character_index][0] for (best_character_index, _) in filtered_result]
+
 
 from typing import Union
 import matplotlib.pyplot as plt
