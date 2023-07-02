@@ -1,5 +1,25 @@
-from src import run_pipeline
+"""
+The work is licensed by Attribution-NonCommercial 4.0 International
+
+Authors:
+    Ayhem Bouabid (ayhem18) <bouabidayhem@gmail.com>
+    Aleksandr Lobanov (teexone) <dev@alobanov.space>
+
+To get extra information about the project or the license, contact 
+any of the following:
+
+    dev@alobanov.space
+    license@alobanov.space
+"""
+
+
+"""
+Executes service and produces an output video. 
+
+    python -m cntell --help
+"""
 import argparse
+
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(
@@ -15,20 +35,20 @@ if __name__ == '__main__':
     argparser.add_argument("video", help="The path to the video to describe.")
     argparser.add_argument("output", help="The path to save the output video to.")
     argparser.add_argument("--temp", help="The path to save temporary files to.", default=".temp")
-    argparser.add_argument("--cpus", help="The number of cpus to use.", type=int, default=1)
     argparser.add_argument("--serie", help="The serie to recognize characters from", type=str, default=None)
     argparser.add_argument("--embeddings", help="The folder to search for embeddings", type=str, default=None)
 
     args = argparser.parse_args()
 
-    run_pipeline(
-        args.video,
-        args.output,
-        args.temp,
-        args.cpus,
-        args.embeddings,
-        args.serie,
-    )
+    if not args.h or args.help:
+        from src import run_pipeline
+        run_pipeline(
+            args.video,
+            args.output,
+            args.temp,
+            args.embeddings,
+            args.serie,
+        )
 
     import shutil
     shutil.rmtree(args.temp)

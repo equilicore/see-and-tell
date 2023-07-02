@@ -1,3 +1,5 @@
+"""Pipeline component that describes a frame in an image."""
+
 import argparse
 import os
 import torch
@@ -6,6 +8,7 @@ import numpy as np
 
 from transformers import AutoProcessor, AutoModelForCausalLM
 from ..log import get_pipeline_logger
+
 
 class FrameDescriptor:
     def __init__(
@@ -50,7 +53,6 @@ class FrameDescriptor:
                 )
             )
 
-
         self.logger.info(f"Processing batch of images {list(map(os.path.basename, images))}")
         inputs = self.processor(images=read_images, return_tensors="pt", padding=True)
         if self.use_gpu:
@@ -91,8 +93,6 @@ class FrameDescriptor:
         self.logger.info(f"Processed {__image}. Generated description: {out}")
         return out
     
-            
-        
 
 if __name__ == "__main__":
     # Example usage

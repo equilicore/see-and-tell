@@ -1,20 +1,27 @@
-from collections import defaultdict
-import signal
-from .describe.frame import FrameDescriptor
-from .listen.speech import SpeechDetector
-from .say.caption import SpeechToText
-from .face.who import FaceRecognizer
-from . import utils
-from concurrent import futures
-from multiprocessing import cpu_count
+"""The main pipeline for the See And Tell project.
 
-import hashlib
-import time
+Process an input video in the following way:
+
+1) Splits the video into frames and audio
+2) Detects segments with no speech
+3) Extracts descriptions for each segment
+4) Recognizes faces in each segment and modifies descriptions
+5) Generates audio for each description
+6) Combines audios and video into a single file
+"""
+
 import os
-import argparse
-import logging
-import atexit
+import time
 import torch
+import signal
+import hashlib
+
+from . import utils
+from .face.who import FaceRecognizer
+from .say.caption import SpeechToText
+from .listen.speech import SpeechDetector
+from .describe.frame import FrameDescriptor
+
 
 descriptor = FrameDescriptor(
     model_name="microsoft/git-large-r-textcaps",
@@ -28,17 +35,8 @@ def run_descriptor(*args, **kwargs) -> str:
         
 class SeeAndTell:
 
-    def __init__(self, temp_folder: str, cpus: int = 1, embeddings_folder: str = None, use_gpu = False) -> None:
+    def __init__(self, temp_folder: str, embeddings_folder: str = None) -> None:
         """Initialize the SeeAndTell class."""
-
-        # self.descriptor_pool = futures.ProcessPoolExecutor(
-        #     max_workers=cpus,
-        #     initializer=init_descriptor,
-        # )
-
-        # self.descriptor = FrameDescriptor(
-        #     model_name="microsoft/git-base-textcaps"
-        # )
 
         # Initialize the SpeechDetector class
         self.speech_detector = SpeechDetector(
@@ -81,6 +79,7 @@ class SeeAndTell:
         frames = [
             os.path.join(get_dir("frames"), frame) for frame in frames
         ]
+        frames.sort()
         # Step 2: Get segments with no speech   
         segments = self.speech_detector(get_path("audio.mp3"))
         segments = utils.get_frames_with_no_speech(
@@ -89,23 +88,22 @@ class SeeAndTell:
         segments = utils.split_segments(segments, 10, 1)
         segments.sort(key=lambda x: x[0])
         # Step 3: Get descriptions for each segment
-        desc_with_faces = []
-
-
         descriptions = {}
         for frame in frames:
             descriptions[frame] = (
                 run_descriptor(frame)
             )
-
         descriptions = {i: d.lower() for i, d in descriptions.items()}
 
+        # Step 4: Recognize faces in each segment
+        desc_with_faces = []
         desc_with_faces, detections = self.face_detector(
             list(descriptions.keys()), 
             list(descriptions.values()),
             from_series
         )
-        print(len(descriptions.keys()), detections)
+
+        # Step 4.1: Get the most described frame for each segment
         frames_to_proceed = []
         for start, end in segments:
             most_described_frame = max(
@@ -113,48 +111,27 @@ class SeeAndTell:
                 key=lambda x: len(x[1])
             )
             frames_to_proceed.append(most_described_frame[0])         
-            print(start, end)
-                   
-            print(most_described_frame[0], most_described_frame[1])
-        
-        # frames_to_proceed = [
-        #     frames[segment[0] - 1]
-        #     for segment in segments
-        # ]
-
+          
+        # Step 4.2: Enhance descriptions for each segment
         descriptions = [desc_with_faces[i] for i in frames_to_proceed]
-        
-        # descriptions = ["some caption for the video"]
-        # Step 4: Produce audio for each description
+
+        # Step 5: Generate audio for each description        
         audio_arrays = []
         for description in descriptions:
             audio_array = self.speech_to_text(description)
             audio_arrays.append(audio_array)
-        # Step 5: Combine audio clips
+
+        # Step 6: Combine clips
         utils.mix_video_and_audio(video, audio_arrays, frames_to_proceed, save_to)
 
-
-
-# logging.basicConfig( 
-#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-#         handlers=[logging.StreamHandler()]
-# )
 
 def run_pipeline(
         video: str,
         output: str,
         temporary_folder: str,
-        cpus: int = 1,
         embeddings_folder: str = './embeddings',
         serie: str = None
 ):
     """Run the pipeline on a video."""
-    see_and_tell = SeeAndTell(temporary_folder, cpus, embeddings_folder, use_gpu=torch.cuda.is_available())
-
-    def signal_handler(signum, frame):
-        print("Caught keyboard interrupt, cancelling pending tasks...")
-        raise KeyboardInterrupt
-    
-    signal.signal(signal.SIGINT, signal_handler)
-
+    see_and_tell = SeeAndTell(temporary_folder, embeddings_folder)
     see_and_tell.describe_video(video, output, serie)

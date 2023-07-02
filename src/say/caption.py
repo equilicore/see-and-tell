@@ -1,13 +1,14 @@
+"""Pipeline component that produces an audio file from a caption."""
+
+import torch
 import argparse
 import tempfile
 import soundfile as sf
+from datasets import load_dataset
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+
 from ..log import get_pipeline_logger
 
-from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
-from datasets import load_dataset
-import torch
-import soundfile as sf
-from datasets import load_dataset
 
 class SpeechToText:
     def __init__(self) -> None:

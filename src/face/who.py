@@ -1,3 +1,10 @@
+"""Pipeline component that recognizes faces in an image.
+
+This module provides a pipeline component that recognizes faces in an image
+and returns the characters in the image. It uses the face_recognition part of
+the project
+"""
+
 import os
 import json
 

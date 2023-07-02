@@ -1,8 +1,11 @@
+"""Pipeline component that detects speech in an audio file."""""
+
 import argparse
 import logging
 
 from pyannote.audio.pipelines import VoiceActivityDetection
 from ..log import get_pipeline_logger
+
 
 class SpeechDetector:
     def __init__(

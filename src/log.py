@@ -1,3 +1,5 @@
+"""Provides logging functionality for pipeline components."""
+
 import logging
 import colorlog
 
