@@ -139,6 +139,7 @@ def run_pipeline(
         embeddings_folder: str = './embeddings',
         serie: str = None
 ):
+
     """Run the pipeline on a video."""
     see_and_tell = SeeAndTell(temporary_folder, embeddings_folder)
     see_and_tell.describe_video(video, output, serie)

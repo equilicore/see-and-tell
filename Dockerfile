@@ -1,12 +1,21 @@
-FROM python:3.10-alpine AS base
+FROM conda/miniconda3 AS base
 
-RUN pip install --upgrade pip
-RUN pip install poetry
-RUN python -m poetry config virtualenvs.create false
+RUN conda update -n base -c defaults conda -y
+RUN conda install -y python=3.10
+RUN pip install --upgrade pip wheel setuptools
+RUN conda install -y llvmlite
+
 
 FROM base AS dependencies
 
 WORKDIR /app
-COPY  ./pyproject.toml /app/pyproject.toml
-RUN poetry install
-RUN pip install torch torchvision torchaudio -f https://download.pytorch.org/whl/torch_stable.html
+COPY  ./requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt
+# RUN pip install torch torchvision torchaudio -f https://download.pytorch.org/whl/cpu
+
+FROM dependencies AS build
+
+RUN conda install -y ffmpeg
+RUN python -c "import nltk; nltk.download('wordnet')"
+COPY . /app/
+
