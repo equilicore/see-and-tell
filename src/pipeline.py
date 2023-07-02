@@ -152,7 +152,7 @@ def run_pipeline(
     see_and_tell = SeeAndTell(temporary_folder, cpus, embeddings_folder, use_gpu=torch.cuda.is_available())
 
     def signal_handler(signum, frame):
-        
+        print("Caught keyboard interrupt, cancelling pending tasks...")
         raise KeyboardInterrupt
     
     signal.signal(signal.SIGINT, signal_handler)
