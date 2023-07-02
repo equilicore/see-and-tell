@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     args = argparser.parse_args()
 
-    if not args.h or args.help:
+    if not hasattr(args, 'h') and not hasattr(args, 'help'):
         from src import run_pipeline
         run_pipeline(
             args.video,

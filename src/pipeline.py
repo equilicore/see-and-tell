@@ -13,7 +13,6 @@ Process an input video in the following way:
 import os
 import time
 import torch
-import signal
 import hashlib
 
 from . import utils
@@ -24,7 +23,7 @@ from .describe.frame import FrameDescriptor
 
 
 descriptor = FrameDescriptor(
-    model_name="microsoft/git-large-r-textcaps",
+    model_name="microsoft/git-base-textcaps",
     use_gpu=torch.cuda.is_available(),
 )
 
@@ -47,6 +46,7 @@ class SeeAndTell:
         )
 
         self.speech_to_text = SpeechToText()
+        self.use_embeddings = embeddings_folder is not None
 
         self.face_detector = FaceRecognizer()
         if embeddings_folder:
@@ -95,25 +95,32 @@ class SeeAndTell:
             )
         descriptions = {i: d.lower() for i, d in descriptions.items()}
 
-        # Step 4: Recognize faces in each segment
-        desc_with_faces = []
-        desc_with_faces, detections = self.face_detector(
-            list(descriptions.keys()), 
-            list(descriptions.values()),
-            from_series
-        )
-
-        # Step 4.1: Get the most described frame for each segment
-        frames_to_proceed = []
-        for start, end in segments:
-            most_described_frame = max(
-                [(i, detections[i]) for i in range(start, end + 1)],
-                key=lambda x: len(x[1])
+        if self.use_embeddings:
+            # Step 4: Recognize faces in each segment
+            desc_with_faces = []
+            desc_with_faces, detections = self.face_detector(
+                list(descriptions.keys()), 
+                list(descriptions.values()),
+                from_series
             )
-            frames_to_proceed.append(most_described_frame[0])         
-          
-        # Step 4.2: Enhance descriptions for each segment
-        descriptions = [desc_with_faces[i] for i in frames_to_proceed]
+
+            # Step 4.1: Get the most described frame for each segment
+            frames_to_proceed = []
+            for start, end in segments:
+                most_described_frame = max(
+                    [(i, detections[i]) for i in range(start, end + 1)],
+                    key=lambda x: len(x[1])
+                )
+                frames_to_proceed.append(most_described_frame[0])         
+            
+            # Step 4.2: Enhance descriptions for each segment
+            descriptions = [desc_with_faces[i] for i in frames_to_proceed]
+        else:
+            frames_to_proceed = [int(s[0]) for s in segments]
+            descriptions = list(descriptions.values())
+            descriptions = [descriptions[i] for i in frames_to_proceed]
+
+        print(frames_to_proceed, descriptions)
 
         # Step 5: Generate audio for each description        
         audio_arrays = []

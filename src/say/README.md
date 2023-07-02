@@ -6,7 +6,7 @@
 
 This component produces a voiced version of scene description. It uses Speech T5 model provided by Microsoft on [HuggingFace platform](https://huggingface.co/microsoft/speecht5_tts)
 
-The component contains a single file `caption.py` that has a callable class `SpeechToText`. The component is not meant to be run separately from pipeline.
+The component contains a single file `caption.py` that has a callable class `SpeechToText`. The component has not developed to be run separately from pipeline.
 
 # License
 
