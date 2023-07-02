@@ -103,7 +103,6 @@ def get_frames_with_no_speech(speech_segments: Iterable[Segment], seconds: int):
         if start != end:
             result.append((start, end))
         start = second_segments[i][1]
-
     return prune_empty_segments(result)
 
 
@@ -134,18 +133,11 @@ def resize_array(arr, size):
 def mix_video_and_audio(
     video_file: str,
     audio_captions: list[np.array],
-    segments: list[tuple[int, int]],
+    # segments: list[tuple[int, int]],
+    pause_at: list[int],
     output_file: str,
     audio_captions_sample_rate: int = 16000,
 ):
-    """Mixes a video and audio files together.
-
-    Args:
-        video_file (str): The path to the video file.
-        audio_files (str): The path to the audio files.
-        audio_starts (list[int]): A list of the start times of the audio files.
-        output_file (str): The path to save the output file to.
-    """
      # Load the input video
     input_video_clip = VideoFileClip(video_file)
     input_audio_clip = AudioFileClip(video_file)
@@ -156,15 +148,15 @@ def mix_video_and_audio(
     output_audio_caption_clips = []
     start = 0
     current_segment = 0
-    while current_segment < len(segments):
+    while current_segment < len(pause_at):
         segment_duration = audio_captions_clips[current_segment].duration
-        before_duration = segments[current_segment][1] - start
-        video_subclip = input_video_clip.subclip(start, segments[current_segment][1])
-        audio_subclip = input_audio_clip.subclip(start, segments[current_segment][1])
+        before_duration = pause_at[current_segment] - start
+        video_subclip = input_video_clip.subclip(start, pause_at[current_segment])
+        audio_subclip = input_audio_clip.subclip(start, pause_at[current_segment])
 
         before_silence = AudioArrayClip(np.zeros((int(before_duration * audio_captions_sample_rate), 1)), audio_captions_sample_rate)        
         segment_silence = AudioArrayClip(np.zeros((int(segment_duration * input_audio_clip.fps), 2)), input_audio_clip.fps)
-        segment_repeated_frame = input_video_clip.get_frame(segments[current_segment][1])
+        segment_repeated_frame = input_video_clip.get_frame(pause_at[current_segment])
         segment_repeated_clip = ImageClip(segment_repeated_frame, duration=segment_duration)
 
 
@@ -176,7 +168,7 @@ def mix_video_and_audio(
         output_audio_clips.append(segment_silence)
         output_audio_caption_clips.append(audio_captions_clips[current_segment])
 
-        start = segments[current_segment][1]
+        start = pause_at[current_segment]
         current_segment += 1
     
     # Add the last segment and silence
@@ -265,9 +257,9 @@ def mix_video_and_audio(
     # output_audio_frames = np.concatenate(output_audio_frames, axis=0)
     # output_audio_captions_frames = np.concatenate(output_audio_captions_frames, axis=0)
     # output_audio_captions_frames = np.expand_dims(output_audio_captions_frames, axis=1)
-    # print(output_audio_frames.shape[0] / input_audio_clip.fps)
-    # print(output_audio_captions_frames.shape[0] / audio_captions_sample_rate)
-    # print(len(output_video_frames) / video_fps)
+    # 
+    # 
+    # 
     # output_audio_clip = AudioArrayClip(
     #     output_audio_frames, 
     #     fps=input_audio_clip.fps

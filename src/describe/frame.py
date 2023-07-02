@@ -1,5 +1,4 @@
 import argparse
-import multiprocessing as mp
 import os
 import torch
 import PIL
@@ -103,7 +102,7 @@ if __name__ == "__main__":
     args = argparser.parse_args()
 
     frame_desc = FrameDescriptor(
-        model_name="microsoft/git-base-textcaps",
+        model_name="microsoft/git-large-r-textcaps",
         use_gpu=True
     )
 

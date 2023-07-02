@@ -1,7 +1,6 @@
 import argparse
 import tempfile
 import soundfile as sf
-import pyttsx3
 from ..log import get_pipeline_logger
 
 from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
@@ -13,7 +12,6 @@ from datasets import load_dataset
 class SpeechToText:
     def __init__(self) -> None:
         """Initialize the AudioCaptionDescriber class."""
-        self.engine = pyttsx3.init()
         self.processing_dir = tempfile.TemporaryDirectory()
         # self.engine.setProperty('rate', 300)
         self.logger = get_pipeline_logger("SpeechToText", "blue")

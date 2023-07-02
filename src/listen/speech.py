@@ -29,7 +29,7 @@ class SpeechDetector:
         self.logger.info(f"Loading audio from {audio}")
         self.logger.info(f"Detecting segment with no speech")
         speech_segments = list(self.pipeline(audio).get_timeline())
-        self.logger.info(f"Detected no speech in {len(speech_segments)} segments")
+        self.logger.info(f"Detected speech in {len(speech_segments)} segments")
         return speech_segments
     
 
@@ -47,4 +47,4 @@ if __name__ == "__main__":
         min_duration_off=0,
         min_duration_on=0,
     )
-    print(speech_detector(args.path))
+    

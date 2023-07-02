@@ -17,7 +17,7 @@ import atexit
 import torch
 
 descriptor = FrameDescriptor(
-    model_name="microsoft/git-base-textcaps",
+    model_name="microsoft/git-large-r-textcaps",
     use_gpu=torch.cuda.is_available(),
 )
 
@@ -86,41 +86,44 @@ class SeeAndTell:
         segments = utils.get_frames_with_no_speech(
             segments, utils.get_length_of_video(video)
         )
-        segments = utils.split_segments(segments, 10, 2)
+        segments = utils.split_segments(segments, 10, 1)
         segments.sort(key=lambda x: x[0])
-        print(segments)
         # Step 3: Get descriptions for each segment
         desc_with_faces = []
 
-        frames_to_proceed = [
-            frames[segment[1] - 1]
-            for segment in segments
-        ]
 
-        # Describe frames in parallel
         descriptions = {}
         for frame in frames:
             descriptions[frame] = (
                 run_descriptor(frame)
             )
 
-        #     # descriptions.append(
-        #     #     self.descriptor(
-        #     #         os.path.join(get_dir("frames"), frames[segment[0]]),
-        #     #         4 * (segment[1] - segment[0]),
-        #     #     )
-        #     # )
-        
         descriptions = {i: d.lower() for i, d in descriptions.items()}
 
-        desc_with_faces = self.face_detector(
+        desc_with_faces, detections = self.face_detector(
             list(descriptions.keys()), 
             list(descriptions.values()),
-        from_series)
-        print(len(desc_with_faces), len(descriptions))
-        descriptions = {k: desc_with_faces[i] for i, k in enumerate(descriptions.keys())}
-        descriptions = [descriptions[i] for i in frames_to_proceed]
-        print(descriptions)
+            from_series
+        )
+
+        frames_to_proceed = []
+        for start, end in segments:
+            most_described_frame = max(
+                [(i, detections[i]) for i in range(start, end + 1)],
+                key=lambda x: len(x[1])
+            )
+            frames_to_proceed.append(most_described_frame[0])         
+            print(start, end)
+                   
+            print(most_described_frame[0], most_described_frame[1])
+        
+        # frames_to_proceed = [
+        #     frames[segment[0] - 1]
+        #     for segment in segments
+        # ]
+
+        descriptions = [desc_with_faces[i] for i in frames_to_proceed]
+        
         # descriptions = ["some caption for the video"]
         # Step 4: Produce audio for each description
         audio_arrays = []
@@ -128,7 +131,7 @@ class SeeAndTell:
             audio_array = self.speech_to_text(description)
             audio_arrays.append(audio_array)
         # Step 5: Combine audio clips
-        utils.mix_video_and_audio(video, audio_arrays, segments, save_to)
+        utils.mix_video_and_audio(video, audio_arrays, frames_to_proceed, save_to)
 
 
 
@@ -149,7 +152,7 @@ def run_pipeline(
     see_and_tell = SeeAndTell(temporary_folder, cpus, embeddings_folder, use_gpu=torch.cuda.is_available())
 
     def signal_handler(signum, frame):
-        print("Caught keyboard interrupt, cancelling pending tasks...")
+        
         raise KeyboardInterrupt
     
     signal.signal(signal.SIGINT, signal_handler)

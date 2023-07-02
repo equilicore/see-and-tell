@@ -1,9 +1,9 @@
-from .face_recognition import recognize_faces
-from ..captions.captions_improved import replace_with_char_names
-from ..log import get_pipeline_logger
-
 import os
 import json
+
+from .face_recognition import recognize_faces
+from ..captions.captions_improved import generate_captions
+from ..log import get_pipeline_logger
 
 class FaceRecognizer:
     def __init__(self) -> None:
@@ -40,7 +40,7 @@ class FaceRecognizer:
 
         self.logger.info(f"Recognized faces in images: {[len(face) for face in faces]}")
 
-        return replace_with_char_names(caption, faces)
+        return generate_captions(caption, faces), faces
 
         
 

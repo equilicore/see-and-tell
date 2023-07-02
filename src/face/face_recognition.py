@@ -148,7 +148,6 @@ def recognize_faces(image: Union[str, Path, np.array], embeddings: Union[str, Pa
             return []
         face_images, bounding_boxes, bb_probs = result
     except TypeError as e:
-        print(e)
         # return an empty list as the model did not detect any images.
         return []
 
@@ -173,13 +172,11 @@ def recognize_faces(image: Union[str, Path, np.array], embeddings: Union[str, Pa
             plt.imshow(f_img.detach().permute(1, 2, 0).cpu().numpy())
             plt.axis('off')
             plt.show()
-            print(bbox)
             for char, emb in embeddings.items():
-                print(char)
                 cos = cosine_similarity(emb, f_emb)
-                print(np.mean(cos))
-        print("#" * 100)
-        print("#" * 100)
+                
+        
+        
         
     cos_similarities = [
                         [np.mean(cosine_similarity(emb, fe)) for _, emb in given_embeddings] 
