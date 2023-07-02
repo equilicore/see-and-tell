@@ -14,9 +14,9 @@ from torchvision.utils import save_image
 import numpy as np
 from _collections_abc import Sequence
 import matplotlib.pyplot as plt
-from .embeddings import __build_embeddings
+from .embeddings import build_embeddings
 from .utilities import FACE_DETECTOR, ENCODER, CONFIDENCE_THRESHOLD, REPORT_THRESHOLD, DEVICE
-from helper_functions import cosine_similarity, process_save_path  # ,cos_sim
+from .helper_functions import cosine_similarity, process_save_path  # ,cos_sim
 import itertools
 
 HOME = os.getcwd()
@@ -47,8 +47,12 @@ def __predict_one_image(face_embeddings: np.ndarray,
     # assert np.allclose(s, sims, rtol=10 ** -4), "WELL APPARENTLY COS SIMILARITY IS BROKEN"
 
     # a couple of assert statements to make sure everything is working correctly under the hood
-    assert len(sims.shape) == 2 and all([isinstance(n, np.number) and np.abs(n) <= 1 for n in sims.flatten()])
+    assert sims.size == 0 or \
+           (len(sims.shape) == 2 and all([isinstance(n, np.number) and np.abs(n) <= 1 for n in sims.flatten()]))
     # create a dataframe for easier manipulation
+    if sims.size == 0:
+        return {} if with_index else []
+
     sims = pd.DataFrame(data=sims, index=list(range(len(face_embeddings))), columns=list(reference_embeddings.keys()))
 
     predictions = {}
@@ -165,7 +169,7 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
     # filter the model's output
     detector_output = [filter_output(o) for o in detector_output]
     # filter empty lists
-    detector_output = [d for d in detector_output if len(d) != 0]
+    # detector_output = [d for d in detector_output if len(d) != 0]
 
     # now each item in the list is a tuple (faces, bounding boxes(optional))
     # where the probabilities are higher than the minimum threshold
@@ -224,7 +228,6 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
                               debug=debug)
 
         predictions.append(p)
-
     if return_bbox:
         return [[(p, do[1]) for p, do in zip(pred, d_out)] for pred, d_out in zip(predictions, detector_output)]
 
@@ -322,7 +325,7 @@ def display_similarity(img1: Union[str, Path, np.array],
                        face_detector=None,
                        encoder=None):
     # get the embeddings as well as the cropped face images
-    embeddings, faces = __build_embeddings([img1, img2],
+    embeddings, faces = build_embeddings([img1, img2],
                                            face_detector=face_detector,
                                            encoder=encoder,
                                            return_faces=True)

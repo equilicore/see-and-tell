@@ -86,14 +86,14 @@ def resize_images(images: Sequence[Image, np.ndarray, torch.Tensor],
     return tensor
 
 
-def __build_embeddings(images: Sequence[Union[Path, str, np.ndarray, torch.tensor]],
-                       face_detector=None,
-                       encoder=None,
-                       keep_all: bool = False,
-                       return_faces: bool = False,
-                       save_faces: Union[str, Path] = None,
-                       batch: bool = True,
-                       ) -> Union[list[list[float]], tuple[list[list[float]], list[list[float]]]]:
+def build_embeddings(images: Sequence[Union[Path, str, np.ndarray, torch.tensor]],
+                     face_detector=None,
+                     encoder=None,
+                     keep_all: bool = False,
+                     return_faces: bool = False,
+                     save_faces: Union[str, Path] = None,
+                     batch: bool = True,
+                     ) -> Union[list[list[float]], tuple[list[list[float]], list[list[float]]]]:
     # set the default arguments
     if face_detector is None:
         face_detector = FACE_DETECTOR
@@ -170,10 +170,10 @@ def build_classes_embeddings(directory: Union[str, Path],
         save_faces = save_faces if os.path.isabs(save_faces) else os.path.join(HOME, save_faces)
 
     for cls, images in classes_paths.items():
-        embeddings_map[cls] = __build_embeddings(images,
-                                                 keep_all=False,  # the images are assumed to have only one face
-                                                 save_faces=os.path.join(save_faces, cls) if save_faces else None,
-                                                 batch=batch)
+        embeddings_map[cls] = build_embeddings(images,
+                                               keep_all=False,  # the images are assumed to have only one face
+                                               save_faces=os.path.join(save_faces, cls) if save_faces else None,
+                                               batch=batch)
 
     # save the resulting dictionary as a json file.
     if save_embedding is not None:
