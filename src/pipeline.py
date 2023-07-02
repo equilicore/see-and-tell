@@ -105,7 +105,7 @@ class SeeAndTell:
             list(descriptions.values()),
             from_series
         )
-
+        print(len(descriptions.keys()), detections)
         frames_to_proceed = []
         for start, end in segments:
             most_described_frame = max(

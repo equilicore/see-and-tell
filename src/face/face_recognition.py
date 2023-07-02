@@ -14,8 +14,8 @@ from torchvision.utils import save_image
 import numpy as np
 from _collections_abc import Sequence
 import matplotlib.pyplot as plt
-from embeddings import __build_embeddings
-from utilities import FACE_DETECTOR, ENCODER, CONFIDENCE_THRESHOLD, REPORT_THRESHOLD, DEVICE
+from .embeddings import __build_embeddings
+from .utilities import FACE_DETECTOR, ENCODER, CONFIDENCE_THRESHOLD, REPORT_THRESHOLD, DEVICE
 from helper_functions import cosine_similarity, process_save_path  # ,cos_sim
 import itertools
 

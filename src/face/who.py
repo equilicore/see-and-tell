@@ -33,10 +33,12 @@ class FaceRecognizer:
 
         self.logger.info(f"Recognizing faces in images batch {image} ...")
 
-        faces = [
-            recognize_faces(image[i], self.embeddings[series])
-            for i in range(len(image))
-        ]
+        # faces = [
+        #     recognize_faces(image[i], self.embeddings[series])
+        #     for i in range(len(image))
+        # ]
+
+        faces = recognize_faces(image, self.embeddings[series])
 
         self.logger.info(f"Recognized faces in images: {[len(face) for face in faces]}")
 

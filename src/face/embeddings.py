@@ -12,8 +12,8 @@ from PIL import Image
 import itertools
 from torchvision import transforms as trans
 import json
-from helper_functions import build_classes_paths, process_save_path
-from utilities import FACE_DETECTOR, ENCODER, DEVICE
+from .helper_functions import build_classes_paths, process_save_path
+from .utilities import FACE_DETECTOR, ENCODER, DEVICE
 
 # the current directory
 HOME = os.getcwd()
