@@ -32,7 +32,7 @@ AI-driven Assitant to Experience Visual Content
 
 Our service aims to make visual content more accessible for individuals with visual impairments. We provide detailed audio descriptions of movies, TV shows, images, and more, allowing visually impaired users to fully experience and enjoy these media. Additionally, our solution caters to situations where active viewing is not possible, like when driving, providing an immersive audio experience instead. Our mission is to promote inclusivity and ensure that everyone, regardless of their visual abilities, can engage with and appreciate visual content.
 
-# Service
+# 💻 Service
 
 <img src="https://i.imgur.com/32q0smh.png"/>
 
@@ -40,7 +40,7 @@ Our service operates through a streamlined pipeline consisting of five essential
 
 Most of components exploit <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.svg" style="height: 1em"/>HuggingFace models, such are SpeechT5, GIT, Audio Segmentation and etc. TODO: WRITE ABOUT NLP AND FACE RECOGNITION
 
-# Demo
+# 🚀 Demo
 
 To provide a demo of our work, we took a 30-seconds fragment from _The Big Bang Theory_ TV series and processed it. 
 <div align="center">
@@ -59,7 +59,7 @@ However, after watching a demo you might notice one of the following:
 - [!] Leonard was recognized as Sheldon, because Sheldon's face was more visible. However, the center figure in the frame was still Leonard. So, the service produced a caption 'Sheldon points to a brick wall' while actually it was Leonard who pointed.
 - [!] At the very end, the model describe scene as 'A man in green jacket and red shirt ...', but the video was paused on different frame at that moment. The reason is that we describe every second, while frame rate of the source video is not divisible by seconds. That is why, the actual frame that was described as 'A man in ... ' is following the one the video was paused on immediately.
 
-# Reproduce
+# 🛠️ Reproduce
 
 To reproduce and run the service locally, you are encouraged to use Docker.
 
