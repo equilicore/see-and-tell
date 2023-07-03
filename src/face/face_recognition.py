@@ -34,6 +34,19 @@ def __predict_one_image(face_embeddings: np.ndarray,
                         reference_embeddings: dict[str: np.ndarray],
                         report_threshold: float,
                         with_index: bool = False) -> Union[list[str], dict[int, str]]:
+    """
+    Args:
+    -  face_embeddings : The embeddings of faces detected in a single image.
+    -  reference_embeddings : A dictionary mapping each class to representative embeddings.
+    -  report_threshold : A threshold value for similarity scores. A face will be paired to a certain class only if
+        the similarity between an image's embeddings and the class' embeddings.
+    -  with_index : whether to return only the classes or a dictionary {indices: classes}
+
+    Returns:
+        The most probable pairing between the detected faces and the classes predefined by the embeddings' dictionary
+
+    """
+
     # the first step is to build a matrix of cos distances between each instance and all the embeddings
     sims = np.asarray(
         [[np.mean(cosine_similarity(fe, ref)) for cls, ref in reference_embeddings.items()]
@@ -117,6 +130,33 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
                     save_faces: Union[str, Path, None] = None,
                     debug: bool = False,
                     ) -> list[str]:
+    """
+    This function is used to recognize faces in given images.
+    It uses pre-computed embeddings to recognize the faces and returns the predicted classes for each face.
+
+    Args:
+    -  images : A sequence of images
+    -  embeddings : the path to the embeddings file, or a dictionary containing the embeddings.
+    -  possible_classes : A sequence of strings representing the possible classes.
+            If not provided, all classes present in the embeddings will be considered.
+    -  face_detector : A face detector object. If not provided, a default face detector will be used.
+    -  encoder : An encoder object. If not provided, a default encoder will be used.
+    -  keep_all : A boolean indicating whether to keep all detected faces or only the best one. Default is True.
+    -  confidence_threshold : the confidence threshold for face detection.
+            Faces with confidence below this threshold will be discarded.
+    -  report_threshold : the report threshold for face recognition.
+            Faces with similarity score below this threshold will be discarded.
+    -  return_bbox : whether to return bounding boxes of the detected faces. Default is False.
+    -  save_faces : the path to save the detected faces. If not provided, faces will not be saved.
+    -  debug : A boolean indicating whether to run the function in debug mode. Default is False.
+
+    Returns:
+    a list of strings, where each string is the predicted class for a face in the images.
+    If  return_bbox  is True, the function returns a list of tuples,
+    where each tuple contains a predicted class and a bounding box for a face
+
+    """
+
     embeddings = __read_embeddings(embeddings) if isinstance(embeddings, (str, Path)) else embeddings
     # the possible classes
     possible_classes = list(embeddings.keys()) if possible_classes is None else possible_classes
@@ -326,9 +366,9 @@ def display_similarity(img1: Union[str, Path, np.array],
                        encoder=None):
     # get the embeddings as well as the cropped face images
     embeddings, faces = build_embeddings([img1, img2],
-                                           face_detector=face_detector,
-                                           encoder=encoder,
-                                           return_faces=True)
+                                         face_detector=face_detector,
+                                         encoder=encoder,
+                                         return_faces=True)
 
     e1, e2 = embeddings
 

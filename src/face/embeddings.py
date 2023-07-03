@@ -94,6 +94,36 @@ def build_embeddings(images: Sequence[Union[Path, str, np.ndarray, torch.tensor]
                      save_faces: Union[str, Path] = None,
                      batch: bool = True,
                      ) -> Union[list[list[float]], tuple[list[list[float]], list[list[float]]]]:
+    """This function takes a sequence of images as input and returns the embeddings of the faces detected in those
+    images. It has the following parameters:
+
+    -  images : A sequence of images in various formats such as  Path ,  str ,  np.ndarray , or  torch.tensor .
+    -  face_detector : An optional face detection algorithm. If not provided, a default face detector is used.
+    -  encoder : An optional face encoder. If not provided, a default encoder is used.
+    -  keep_all : A boolean flag indicating whether to keep all detected faces or only the best one. Default is  False .
+    -  return_faces : A boolean flag indicating whether to return the extracted face images along with the embeddings. Default is  False .
+    -  save_faces : An optional directory path to save the extracted face images.
+    -  batch : A boolean flag indicating whether to process images in batches or individually. Default is  True .
+
+    The function first sets the default values for  face_detector  and  encoder  if they are not provided.
+    It then processes the  save_faces  parameter to ensure it is a valid directory path.
+
+    Next, the function converts the input images to a format that can be processed.
+    If  batch  is  True , the images are resized and passed through the face detector in batches.
+    Otherwise, each image is processed individually.
+
+    Any  None  objects in the  face_images  list are removed.
+    If  keep_all  is  True , the list of face images is flattened.
+
+    The function checks if all face images have the same dimensions and
+    saves the extracted faces if  save_faces  is provided.
+
+    To obtain the embeddings, the face images are converted to a batched tensor and passed through the encoder.
+    The resulting embeddings are converted to a list.
+
+    If  return_faces  is  True , the function returns the embeddings along with the face images.
+    Otherwise, it only returns the embeddings."""
+
     # set the default arguments
     if face_detector is None:
         face_detector = FACE_DETECTOR
@@ -183,7 +213,7 @@ def build_classes_embeddings(directory: Union[str, Path],
             save_embedding) else save_embedding
 
         # make sure the file is a json file
-        assert str(save_embedding).endswith('.json')
+        assert str(save_embedding).endswith('.json'), "THE FILE MUST A JSON FILE"
 
         with open(save_embedding, 'w') as f:
             json.dump(embeddings_map, f, indent=4)
