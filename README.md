@@ -3,7 +3,7 @@
 See and Tell
 </h1>
 <h4>
-AI-driven Assitant to Experience Visual Content
+AI-driven Assistant to Experience Visual Content
 </h4>
 <h4>
   <a href="https://pytorch.org/">
