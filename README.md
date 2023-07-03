@@ -38,7 +38,7 @@ Our service aims to make visual content more accessible for individuals with vis
 
 Our service operates through a streamlined pipeline consisting of five essential components. First, the **Describe** component utilizes an image-to-text model to generate textual descriptions of the events happening on the screen. Next, the **Listen** component intelligently identifies dialogue moments in the video to avoid overlapping with audio descriptions. The **Recognize** component employs face detection to identify characters, enhancing the context of captions by including character names. The **Say** component utilizes text-to-speech technology to voice the generated captions. Finally, **Mixer** combines the voiced captions with the original video, producing a final result video where the audio descriptions seamlessly blend with the visual content.
 
-Most of the components exploit <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.svg" style="height: 1.5em"/> HuggingFace models, such are SpeechT5, GIT, Audio Segmentation, the Stanza NLP pipeline from Stanford and Facenet as a face recognition library. 
+Most of the components exploit <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.svg" style="height: 1.05em"/> HuggingFace models, such are SpeechT5, GIT, Audio Segmentation, the Stanza NLP pipeline from Stanford and Facenet as a face recognition library. 
 
 # 🚀 Demo
 
