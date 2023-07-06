@@ -19,10 +19,10 @@ AI-driven Assistant to Experience Visual Content
   <a href="https://www.youtube.com/watch?v=EVBhl29Ns0U">
   <img src="https://img.shields.io/badge/Demo-%23FF0000.svg?style=for-the-badge&logo=YouTube&logoColor=white"/>
   </a>
-  <a href="https://github.com/teexone/see-and-tell/">
-  <img src="https://img.shields.io/badge/linkedin_Post-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white"/>
+  <a href="https://blog.alobanov.space/2023/07/05/see-and-tell-0/">
+  <img src="https://img.shields.io/badge/Blog_Post-%230077B5.svg?style=for-the-badge&logo=blogger&logoColor=white"/>
   </a>  
-  <a href="https://github.com/teexone/see-and-tell/">
+  <a href="https://habr.com/ru/articles/746134/">
   <img src="https://img.shields.io/badge/Habr_Post-%2365A5B3.svg?style=for-the-badge&logo=habr&logoColor=white"/>
   </a> 
 </h4>
