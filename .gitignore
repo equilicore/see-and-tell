@@ -14,3 +14,4 @@ src/captions_old
 cntell_env
 *.debug.py
 *.jpg
+*.p
