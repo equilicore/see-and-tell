@@ -1,9 +1,8 @@
 from collections import Counter
-import warnings
 import numpy as np
 import pandas as pd
 
-from .noun_phrases_detection import extract_noun_phrases
+from src.captions.noun_phrases_detection import extract_noun_phrases
 
 
 def build_captions_class_matrix(filtered_nps: list[list[list[str]]], predictions: list[list[str]]) \
