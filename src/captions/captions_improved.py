@@ -131,7 +131,7 @@ def map_predictions(noun_phrases: list[list[str]],
                     decided_prediction_np: dict[str, Counter]) -> dict[str: list[str]]:
 
     # since it is not possible to have lists as indices, we need to convert noun phrases (as lists) to strings
-    # we need a mapping from the resultings strings to the original lists
+    # we need a mapping from the resulting strings to the original lists
     def to_str(tokens: list[str]) -> str:
         return (" ".join(tokens)).lower().strip()
 

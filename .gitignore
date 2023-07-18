@@ -12,6 +12,8 @@ src/captions_old
 *.ipynb
 *.idea
 cntell_env
-*.debug.py
+*debug.py
 *.jpg
 *.p
+
+
