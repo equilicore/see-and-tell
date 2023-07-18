@@ -23,7 +23,7 @@ from .describe.frame import FrameDescriptor
 
 
 descriptor = FrameDescriptor(
-    model_name="microsoft/git-base-textcaps",
+    model_name="microsoft/git-large-r-textcaps",
     use_gpu=torch.cuda.is_available(),
 )
 
