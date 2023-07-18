@@ -18,7 +18,7 @@ from torchvision.utils import save_image
 from _collections_abc import Sequence
 
 from src.face.embeddings import build_embeddings
-from src.face.utilities import FACE_DETECTOR, ENCODER, CONFIDENCE_THRESHOLD, REPORT_THRESHOLD, DEVICE
+from src.face.utilities import CONFIDENCE_THRESHOLD, REPORT_THRESHOLD, FR_SingletonInitializer
 from src.face.helper_functions import cosine_similarity, process_save_path  # ,cos_sim
 
 HOME = os.getcwd()
@@ -162,11 +162,14 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
     # limit the classes to only those selected and convert the actual embeddings to numpy arrays
     embeddings = dict([(p_c, np.asarray(embeddings[p_c])) for p_c in possible_classes])
 
+    # define the FR_SingletonInitializer
+    fr_singleton = FR_SingletonInitializer()
+
     if face_detector is None:
-        face_detector = FACE_DETECTOR
+        face_detector = fr_singleton.get_face_detector()
         face_detector.keep_all = keep_all
 
-    encoder = ENCODER if encoder is None else encoder
+    encoder = fr_singleton.get_encoder() if encoder is None else encoder
 
     # convert the passed images to working types
     def convert_image(image):
@@ -198,6 +201,7 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
     if return_bbox:
         detector_boxes = [face_detector.detect(image) for image in images]
         # merge the face recognition and the
+        # TODO: run the code with 'return_bbox=True' to make sure it works correctly,
         detector_output = detector_output + (detector_boxes[0],)
 
     # filter the model's output
@@ -222,7 +226,12 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
     else:
         faces = detector_output.copy()
 
-    faces = torch.stack(faces).to(torch.float32).to(DEVICE)
+    # consider the case where there is no face detected with high enough probability: return an empty list
+    # TODO: Make sure this is an actual good fix
+    if len(faces) == 0:
+        return []
+
+    faces = torch.stack(faces).to(torch.float32).to(fr_singleton.get_device())
     # convert to tensor
     face_embeddings = encoder(faces).detach().cpu().numpy()
 
@@ -290,11 +299,14 @@ def recognize_one_image(image: Union[str, Path, np.ndarray, torch.tensor],
     # limit the classes to only those selected and convert the actual embeddings to numpy arrays
     embeddings = dict([(p_c, np.asarray(embeddings[p_c])) for p_c in possible_classes])
 
+    # define SingletonInitializer
+    fr_singleton = FR_SingletonInitializer()
+
     if face_detector is None:
-        face_detector = FACE_DETECTOR
+        face_detector = fr_singleton.get_face_detector()
         face_detector.keep_all = keep_all
 
-    encoder = ENCODER if encoder is None else encoder
+    encoder = fr_singleton.get_encoder() if encoder is None else encoder
 
     # convert the image to a type that we can work with:
     if isinstance(image, (str, Path)):
@@ -335,7 +347,7 @@ def recognize_one_image(image: Union[str, Path, np.ndarray, torch.tensor],
         return []
 
     # convert the list of tensors to one batched tensor
-    final_face_images = torch.stack(faces).to(torch.float32).to(DEVICE)
+    final_face_images = torch.stack(faces).to(torch.float32).to(fr_singleton.get_device())
     # produce the embeddings of the detected faces
     face_embeddings = encoder(final_face_images).detach().cpu().numpy()
     if debug:

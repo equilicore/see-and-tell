@@ -13,12 +13,31 @@ from typing import Union
 
 HOME = os.getcwd()
 
-# this is the library that will perform most text-analysis tasks
-NLP = stanza.Pipeline('en', download_method=DownloadMethod.REUSE_RESOURCES, use_gpu=True)
-# this is the synonyms' set of the word 'person' that best serves our purposes
-PEOPLE = wn.synset('people.n.01')
-# this is the synonyms' set of the word 'people' that best serves our purposes
-PERSON = wn.synset('person.n.01')
+
+class NLP_SingletonInitializer(object):
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(NLP_SingletonInitializer, cls).__new__(cls)
+
+            # this is the library that will perform most text-analysis tasks
+            cls.instance.__nlp_object = stanza.Pipeline('en', download_method=DownloadMethod.REUSE_RESOURCES,
+                                                        use_gpu=True)
+            # this is the synonyms' set of the word 'person' that best serves our purposes
+            cls.instance.__people_ref = wn.synset('people.n.01')
+            # this is the synonyms' set of the word 'people' that best serves our purposes
+            cls.instance.__person_ref = wn.synset('person.n.01')
+
+        return cls.instance
+
+    def get_nlp(self):
+        return self.__nlp_object
+
+    def get_people(self):
+        return self.__people_ref
+
+    def get_person(self):
+        return self.__person_ref
+
 
 NP = 'NP'
 NOUN = 'NOUN'
@@ -54,8 +73,9 @@ def is_word_person(word: str, pos_tag: str,
     Returns:
     whether the word can mean 'PERSON' or 'PEOPLE'
     """
+    nlp_singleton = NLP_SingletonInitializer()
     if reference is None:
-        reference = PERSON
+        reference = nlp_singleton.get_person()
 
     if pos_tag.startswith('v'):
         pos_tag = 'VERB'
@@ -97,6 +117,7 @@ def extract_person_words(noun_phrase_text: list[str], metadata: dict[str, tuple[
 
     Returns: a list of 'PERSON' words and their indices
     """
+    nlp_singleton = NLP_SingletonInitializer()
 
     def is_person(word: str) -> bool:
         """This inner function ensures easier use of the local variables,
@@ -104,8 +125,8 @@ def extract_person_words(noun_phrase_text: list[str], metadata: dict[str, tuple[
         # extract the word's metadata
         pos_tag, lemma = metadata[word]
         result = pos_tag == 'NOUN' and (lemma in known_person_lemmas
-                                        or is_word_person(lemma, pos_tag, reference=PERSON) or
-                                        is_word_person(lemma, pos_tag, reference=PEOPLE))
+                                        or is_word_person(lemma, pos_tag, reference=nlp_singleton.get_person()) or
+                                        is_word_person(lemma, pos_tag, reference=nlp_singleton.get_people()))
 
         # add the lemma to the know_person_words
         if result:
@@ -225,12 +246,14 @@ def __indices_mapping(cleaned: Sequence[str],
 
 def extract_noun_phrases(sentences: Sequence[str],
                          select: bool = False) -> tuple[list[list[list[str]]], list[int]]:
+    nlp_singleton = NLP_SingletonInitializer()
+    nlp = nlp_singleton.get_nlp()
     cleaned = [__prepare_str(c) for c in sentences]
     # first prepare the sentences
     text = ' '.join(cleaned)
 
     # the produced text will be passed to NLP for processing
-    doc = NLP(text)
+    doc = nlp(text)
     doc_sentences = [s.text.lower().strip() for s in doc.sentences]
 
     # since the tokenization process is not guaranteed to return the extract number of sentences

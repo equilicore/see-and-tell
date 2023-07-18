@@ -17,7 +17,7 @@ BBT_DIR = os.path.join(HOME, 'src', 'dataset', 'BigBangTheory')
 
 predictions = recognize_faces(frames,
                               embeddings=save_emb_file,
-                              save_faces=os.path.join(HOME, 'src', 'face', '../debug_recognized_faces'),
+                              save_faces=os.path.join(HOME, 'src', 'face', 'debug_recognized_faces_test'),
                               debug=False,
                               return_bbox=False)
 

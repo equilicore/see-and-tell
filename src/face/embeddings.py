@@ -15,7 +15,8 @@ from PIL import Image
 from torchvision import transforms as trans
 
 from src.face.helper_functions import build_classes_paths, process_save_path
-from src.face.utilities import FACE_DETECTOR, ENCODER, DEVICE
+# from src.face.utilities import FACE_DETECTOR, ENCODER, DEVICE
+from src.face.utilities import FR_SingletonInitializer
 
 # the current directory
 HOME = os.getcwd()
@@ -52,14 +53,15 @@ def build_embeddings(images: Sequence[Union[Path, str, np.ndarray, torch.tensor]
     The extracted images are passed through the encoder to create the embeddings
     The function returns the embeddings along with the 'faces' according to the 'return_faces' boolean flag"""
 
+    fr_singleton = FR_SingletonInitializer()
     # set the default arguments
     if face_detector is None:
-        face_detector = FACE_DETECTOR
+        face_detector = fr_singleton.get_face_detector()
         # set the behavior of the face detection algorithm
         face_detector.keep_all = keep_all
 
     if encoder is None:
-        encoder = ENCODER
+        encoder = fr_singleton.get_encoder()
 
     # process save_faces: it is only a directory
     save_faces = process_save_path(save_faces, file_ok=False)
@@ -69,7 +71,7 @@ def build_embeddings(images: Sequence[Union[Path, str, np.ndarray, torch.tensor]
 
     if batch:
         final_images = resize_images(images)
-        face_images = face_detector.forward(final_images.to(DEVICE))
+        face_images = face_detector.forward(final_images.to(fr_singleton.get_device()))
     else:
         face_images = [face_detector.forward(img) for img in images]
 
@@ -105,7 +107,7 @@ def build_embeddings(images: Sequence[Union[Path, str, np.ndarray, torch.tensor]
 
     # to get the embeddings, we simply: convert the list of tensors to one batched tensor
     if not batch:
-        face_images = torch.stack(face_images).to(torch.float32).to(DEVICE)
+        face_images = torch.stack(face_images).to(torch.float32).to(fr_singleton.get_device())
 
     embeddings = encoder(face_images).detach().cpu().numpy()
 
@@ -124,7 +126,6 @@ def build_classes_embeddings(directory: Union[str, Path],
                              save_faces: Union[str, Path, None] = None,
                              images_extensions: Sequence[str] = None,
                              batch: bool = True) -> dict:
-
     # first let's build the dictionary that maps each class to its images
     classes_paths = build_classes_paths(directory, images_extensions=images_extensions)
     embeddings_map = {}
