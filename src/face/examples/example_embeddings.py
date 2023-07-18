@@ -1,7 +1,7 @@
 import os
 import torch.cuda
-from embeddings import build_classes_embeddings
 from pathlib import Path
+from src.face.embeddings import build_classes_embeddings
 
 HOME = Path(os.getcwd()).parent.parent
 
@@ -20,5 +20,5 @@ print(torch.cuda.is_available())
 
 bbt_embeddings = build_classes_embeddings(directory=BBT_DIR,
                                           save_embedding=save_emb_file,
-                                          save_faces=os.path.join(HOME, 'src', 'face_2', 'debug_cropped_faces'),
+                                          save_faces=os.path.join(HOME, 'src', 'face_2', '../debug_cropped_faces'),
                                           batch=False)

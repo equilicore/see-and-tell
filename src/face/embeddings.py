@@ -1,19 +1,21 @@
 """
 This scripts contains the functionality needed to build the embeddings used for face recognition
 """
-from typing import Union
-from _collections_abc import Sequence
-from pathlib import Path
 import torch
 import numpy as np
-from torchvision.utils import save_image
 import os
-from PIL import Image
 import itertools
-from torchvision import transforms as trans
 import json
-from .helper_functions import build_classes_paths, process_save_path
-from .utilities import FACE_DETECTOR, ENCODER, DEVICE
+
+from pathlib import Path
+from typing import Union
+from _collections_abc import Sequence
+from torchvision.utils import save_image
+from PIL import Image
+from torchvision import transforms as trans
+
+from src.face.helper_functions import build_classes_paths, process_save_path
+from src.face.utilities import FACE_DETECTOR, ENCODER, DEVICE
 
 # the current directory
 HOME = os.getcwd()
@@ -24,6 +26,138 @@ RESIZE_THRESHOLDS2 = [480, 512, 600, 640, 750, 800, 1000]
 torch.manual_seed(69)
 
 
+def build_embeddings(images: Sequence[Union[Path, str, np.ndarray, torch.tensor]],
+                     face_detector=None,
+                     encoder=None,
+                     keep_all: bool = False,
+                     return_faces: bool = False,
+                     save_faces: Union[str, Path] = None,
+                     batch: bool = True,
+                     ) -> Union[list[list[float]], tuple[list[list[float]], list[list[float]]]]:
+    """
+    This function takes a sequence of images as input and returns the embeddings of the faces detected in those
+    images. It has the following parameters:
+
+    -  images : A sequence of images: either paths to images, or actual images converted to numpy array / tensors.
+    -  face_detector : The face detection algorithm.
+    -  encoder : The encoder algorithm.
+    -  keep_all : boolean flag: process all detected faces in a given image. Default is True
+    -  return_faces : boolean flag: return faces objects or not. Default is False
+    -  save_faces : An optional directory path to save the extracted face images.
+    -  batch : boolean flag: process images in batches or not. Default to True .
+
+    The function set the defaults arguments, processes any given paths, then prepare data for batch processing
+    according to the ```batch``` boolean flag
+
+    The extracted images are passed through the encoder to create the embeddings
+    The function returns the embeddings along with the 'faces' according to the 'return_faces' boolean flag"""
+
+    # set the default arguments
+    if face_detector is None:
+        face_detector = FACE_DETECTOR
+        # set the behavior of the face detection algorithm
+        face_detector.keep_all = keep_all
+
+    if encoder is None:
+        encoder = ENCODER
+
+    # process save_faces: it is only a directory
+    save_faces = process_save_path(save_faces, file_ok=False)
+
+    # make sure to convert the images to a format we can work with
+    images = [Image.open(str(img)) if isinstance(img, (str, Path)) else img for img in images]
+
+    if batch:
+        final_images = resize_images(images)
+        face_images = face_detector.forward(final_images.to(DEVICE))
+    else:
+        face_images = [face_detector.forward(img) for img in images]
+
+    # remove any None objects
+    if isinstance(face_images, list):
+        face_images = [fi for fi in face_images if fi is not None]
+
+    # flatten the output if keep_all is set to True
+    if keep_all:
+        # according to the documentation of the forward function of the 'mtcnn' class
+        #: https://github.com/timesler/facenet-pytorch/blob/fa70227bd5f02209512f60bd10e7e66877fdb4f6/models/mtcnn.py
+        # the input will be of n * image_shape where 'n' is the number of detected images
+
+        # the idea is to flatten the list: reducing the output to 4 dimensions where each
+        # inner element is an image: 3-dimensional
+        face_images = list(itertools.chain(*list(face_images)))
+
+    # now, checking if all images are of the same dimensions
+    shape = face_images[0].shape
+    for face in face_images:
+        assert face.shape == shape
+
+    # save the faces extracted from the images
+    if save_faces is not None:
+        # choose the face_images or final_face_images to
+        for index, img in enumerate(face_images):
+            face_save_path = os.path.join(save_faces, f'cropped_image_{index}.jpg')
+            save_image(img, face_save_path)
+
+    # encoding the faces (creating the embeddings) is performed in a single batch
+    # regardless of the value of the ```batch``` argument, so if batch is set to False
+    # face_images is a list of torch.tensors
+
+    # to get the embeddings, we simply: convert the list of tensors to one batched tensor
+    if not batch:
+        face_images = torch.stack(face_images).to(torch.float32).to(DEVICE)
+
+    embeddings = encoder(face_images).detach().cpu().numpy()
+
+    assert len(embeddings) == len(face_images) and len(embeddings.shape) == 2
+
+    embeddings = embeddings.tolist()
+
+    if return_faces:
+        return embeddings, face_images
+
+    return embeddings
+
+
+def build_classes_embeddings(directory: Union[str, Path],
+                             save_embedding: Union[str, Path] = None,
+                             save_faces: Union[str, Path, None] = None,
+                             images_extensions: Sequence[str] = None,
+                             batch: bool = True) -> dict:
+
+    # first let's build the dictionary that maps each class to its images
+    classes_paths = build_classes_paths(directory, images_extensions=images_extensions)
+    embeddings_map = {}
+
+    if save_faces is not None:
+        save_faces = save_faces if os.path.isabs(save_faces) else os.path.join(HOME, save_faces)
+
+    for cls, images in classes_paths.items():
+        embeddings_map[cls] = build_embeddings(images,
+                                               keep_all=False,  # the images are assumed to have only one face
+                                               save_faces=os.path.join(save_faces, cls) if save_faces else None,
+                                               batch=batch)
+
+    # process save_embedding path
+    # the main condition if the path is a file, it must have the .json extension
+    save_embedding = process_save_path(save_embedding,
+                                       file_ok=True,
+                                       dir_ok=True,
+                                       condition=lambda path: not os.path.isfile(path) or str(path).endswith('.json'),
+                                       error_message='MAKE SURE THE PASSED FILE IS A .json FILE')
+    if save_embedding is not None:
+        save_embedding = os.path.join(save_embedding, 'embeddings.json') if os.path.isdir(
+            save_embedding) else save_embedding
+
+        with open(save_embedding, 'w') as f:
+            json.dump(embeddings_map, f, indent=4)
+
+    # return the embeddings
+    return embeddings_map
+
+
+# this part of the file is intended to add batching to the face detection phase
+# the function current does not give the desired results and should be investigated in more depth
 def __to_numpy(image: [np.ndarray, torch.Tensor]) -> np.ndarray:
     if isinstance(image, torch.Tensor):
         return image.cpu().numpy()
@@ -84,139 +218,3 @@ def resize_images(images: Sequence[Image, np.ndarray, torch.Tensor],
     # The current implementation will return a tensor of the following shape (batch_size, H, W, C)
     tensor = torch.permute(input=tensor, dims=(0, 2, 3, 1))
     return tensor
-
-
-def build_embeddings(images: Sequence[Union[Path, str, np.ndarray, torch.tensor]],
-                     face_detector=None,
-                     encoder=None,
-                     keep_all: bool = False,
-                     return_faces: bool = False,
-                     save_faces: Union[str, Path] = None,
-                     batch: bool = True,
-                     ) -> Union[list[list[float]], tuple[list[list[float]], list[list[float]]]]:
-    """This function takes a sequence of images as input and returns the embeddings of the faces detected in those
-    images. It has the following parameters:
-
-    -  images : A sequence of images in various formats such as  Path ,  str ,  np.ndarray , or  torch.tensor .
-    -  face_detector : An optional face detection algorithm. If not provided, a default face detector is used.
-    -  encoder : An optional face encoder. If not provided, a default encoder is used.
-    -  keep_all : A boolean flag indicating whether to keep all detected faces or only the best one. Default is  False .
-    -  return_faces : A boolean flag indicating whether to return the extracted face images along with the embeddings. Default is  False .
-    -  save_faces : An optional directory path to save the extracted face images.
-    -  batch : A boolean flag indicating whether to process images in batches or individually. Default is  True .
-
-    The function first sets the default values for  face_detector  and  encoder  if they are not provided.
-    It then processes the  save_faces  parameter to ensure it is a valid directory path.
-
-    Next, the function converts the input images to a format that can be processed.
-    If  batch  is  True , the images are resized and passed through the face detector in batches.
-    Otherwise, each image is processed individually.
-
-    Any  None  objects in the  face_images  list are removed.
-    If  keep_all  is  True , the list of face images is flattened.
-
-    The function checks if all face images have the same dimensions and
-    saves the extracted faces if  save_faces  is provided.
-
-    To obtain the embeddings, the face images are converted to a batched tensor and passed through the encoder.
-    The resulting embeddings are converted to a list.
-
-    If  return_faces  is  True , the function returns the embeddings along with the face images.
-    Otherwise, it only returns the embeddings."""
-
-    # set the default arguments
-    if face_detector is None:
-        face_detector = FACE_DETECTOR
-        # set the behavior of the face detection algorithm
-        face_detector.keep_all = keep_all
-
-    if encoder is None:
-        encoder = ENCODER
-
-    # process save_faces: it is only a directory
-    save_faces = process_save_path(save_faces, file_ok=False)
-
-    # make sure to convert the images to a format we can work with
-    images = [Image.open(str(img)) if isinstance(img, (str, Path)) else img for img in images]
-
-    if batch:
-        final_images = resize_images(images)
-        face_images = face_detector.forward(final_images.to(DEVICE))
-    else:
-        face_images = [face_detector.forward(img) for img in images]
-
-    # remove any None objects
-    if isinstance(face_images, list):
-        face_images = [fi for fi in face_images if fi is not None]
-
-    # flatten the output if keep_all is set to True
-    if keep_all:
-        # according to the documentation of the forward function of the 'mtcnn' class
-        #: https://github.com/timesler/facenet-pytorch/blob/fa70227bd5f02209512f60bd10e7e66877fdb4f6/models/mtcnn.py
-        # the input will be of n * image_shape where 'n' is the number of detected images
-
-        # the idea is to flatten the list: reducing the output to 4 dimensions where each
-        # inner element is an image: 3-dimensional
-        face_images = list(itertools.chain(*list(face_images)))
-
-    # now, checking if all images are of the same dimensions
-    shape = face_images[0].shape
-    for face in face_images:
-        assert face.shape == shape
-
-    # save the faces extracted from the images
-    if save_faces is not None:
-        # choose the face_images or final_face_images to
-        for index, img in enumerate(face_images):
-            face_save_path = os.path.join(save_faces, f'cropped_image_{index}.jpg')
-            save_image(img, face_save_path)
-
-    # to get the embeddings, we simply: convert the list of tensors to one batched tensor
-    if not batch:
-        face_images = torch.stack(face_images).to(torch.float32).to(DEVICE)
-
-    embeddings = encoder(face_images).detach().cpu().numpy()
-
-    assert len(embeddings) == len(face_images) and len(embeddings.shape) == 2
-
-    embeddings = embeddings.tolist()
-
-    if return_faces:
-        return embeddings, face_images
-
-    return embeddings
-
-
-def build_classes_embeddings(directory: Union[str, Path],
-                             save_embedding: Union[str, Path] = None,
-                             save_faces: Union[str, Path, None] = None,
-                             images_extensions: Sequence[str] = None,
-                             batch: bool = True) -> dict:
-    # first let's build the dictionary that maps each class to its images
-    classes_paths = build_classes_paths(directory, images_extensions=images_extensions)
-    embeddings_map = {}
-
-    if save_faces is not None:
-        save_faces = save_faces if os.path.isabs(save_faces) else os.path.join(HOME, save_faces)
-
-    for cls, images in classes_paths.items():
-        embeddings_map[cls] = build_embeddings(images,
-                                               keep_all=False,  # the images are assumed to have only one face
-                                               save_faces=os.path.join(save_faces, cls) if save_faces else None,
-                                               batch=batch)
-
-    # save the resulting dictionary as a json file.
-    if save_embedding is not None:
-        save_embedding = save_embedding if os.path.isabs(save_embedding) else os.path.join(HOME, save_embedding)
-        # if the saving path is a directory, save the result in a file with a generic name
-        save_embedding = os.path.join(save_embedding, 'embeddings.json') if os.path.isdir(
-            save_embedding) else save_embedding
-
-        # make sure the file is a json file
-        assert str(save_embedding).endswith('.json'), "THE FILE MUST A JSON FILE"
-
-        with open(save_embedding, 'w') as f:
-            json.dump(embeddings_map, f, indent=4)
-
-    # return the embeddings
-    return embeddings_map

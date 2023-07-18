@@ -4,20 +4,22 @@ available at: https://github.com/timesler/facenet-pytorch/blob/master
 """
 
 import os
+import json
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import torch
+import itertools
+
 from pathlib import Path
 from typing import Union
-import json
-import pandas as pd
 from PIL import Image
-import torch
 from torchvision.utils import save_image
-import numpy as np
 from _collections_abc import Sequence
-import matplotlib.pyplot as plt
-from .embeddings import build_embeddings
-from .utilities import FACE_DETECTOR, ENCODER, CONFIDENCE_THRESHOLD, REPORT_THRESHOLD, DEVICE
-from .helper_functions import cosine_similarity, process_save_path  # ,cos_sim
-import itertools
+
+from src.face.embeddings import build_embeddings
+from src.face.utilities import FACE_DETECTOR, ENCODER, CONFIDENCE_THRESHOLD, REPORT_THRESHOLD, DEVICE
+from src.face.helper_functions import cosine_similarity, process_save_path  # ,cos_sim
 
 HOME = os.getcwd()
 
@@ -51,13 +53,6 @@ def __predict_one_image(face_embeddings: np.ndarray,
     sims = np.asarray(
         [[np.mean(cosine_similarity(fe, ref)) for cls, ref in reference_embeddings.items()]
          for fe in face_embeddings])
-
-    # commented code using for testing
-    # s = np.asarray(
-    #     [[1 - np.mean(cos_sim(fe, ref)) for cls, ref in reference_embeddings.items()]
-    #      for fe in face_embeddings])
-
-    # assert np.allclose(s, sims, rtol=10 ** -4), "WELL APPARENTLY COS SIMILARITY IS BROKEN"
 
     # a couple of assert statements to make sure everything is working correctly under the hood
     assert sims.size == 0 or \
@@ -154,7 +149,6 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
     a list of strings, where each string is the predicted class for a face in the images.
     If  return_bbox  is True, the function returns a list of tuples,
     where each tuple contains a predicted class and a bounding box for a face
-
     """
 
     embeddings = __read_embeddings(embeddings) if isinstance(embeddings, (str, Path)) else embeddings
@@ -208,8 +202,6 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
 
     # filter the model's output
     detector_output = [filter_output(o) for o in detector_output]
-    # filter empty lists
-    # detector_output = [d for d in detector_output if len(d) != 0]
 
     # now each item in the list is a tuple (faces, bounding boxes(optional))
     # where the probabilities are higher than the minimum threshold
@@ -268,6 +260,7 @@ def recognize_faces(images: Sequence[Union[str, Path, np.ndarray, torch.Tensor]]
                               debug=debug)
 
         predictions.append(p)
+
     if return_bbox:
         return [[(p, do[1]) for p, do in zip(pred, d_out)] for pred, d_out in zip(predictions, detector_output)]
 
@@ -327,11 +320,13 @@ def recognize_one_image(image: Union[str, Path, np.ndarray, torch.tensor],
         if bounding_boxes is not None:
             filtered_list = [(face, bb, p)
                              for face, bb, p in zip(face_images, bounding_boxes, probs) if p >= confidence_threshold]
+            # extract faces and bounding boxes only
             faces, bounding_boxes, _ = list(map(list, zip(*filtered_list)))
 
         else:
             filtered_list = [(face, p)
                              for face, p in zip(face_images, probs) if p >= confidence_threshold]
+            # detach faces from probabilities...
             faces, _ = list(map(list, zip(*filtered_list)))
 
     except (TypeError, ValueError):
