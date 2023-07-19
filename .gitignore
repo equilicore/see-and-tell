@@ -8,7 +8,6 @@ dataset
 *.pickle
 *.zip
 src/captions_old
-*.txt
 *.ipynb
 *.idea
 cntell_env
