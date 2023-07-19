@@ -23,7 +23,7 @@ from .describe.frame import FrameDescriptor
 
 
 descriptor = FrameDescriptor(
-    model_name="microsoft/git-base-textcaps",
+    model_name="microsoft/git-large-r-textcaps",
     use_gpu=torch.cuda.is_available(),
 )
 
@@ -98,29 +98,32 @@ class SeeAndTell:
         if self.use_embeddings:
             # Step 4: Recognize faces in each segment
             desc_with_faces = []
-            desc_with_faces, detections = self.face_detector(
+            desc_with_faces, desc_indices, detections = self.face_detector(
                 list(descriptions.keys()), 
                 list(descriptions.values()),
                 from_series
             )
 
-            # Step 4.1: Get the most described frame for each segment
+          # Step 4.1: Get the most described frame for each segment
             frames_to_proceed = []
             for start, end in segments:
                 most_described_frame = max(
-                    [(i, detections[i]) for i in range(start, end + 1)],
+                    [(ind, detections[i]) for i, ind in enumerate(desc_indices) if start <= ind <= end],
                     key=lambda x: len(x[1])
                 )
                 frames_to_proceed.append(most_described_frame[0])         
             
             # Step 4.2: Enhance descriptions for each segment
-            descriptions = [desc_with_faces[i] for i in frames_to_proceed]
+            descriptions = [desc_with_faces[desc_indices.index(i)] for i in frames_to_proceed]
+            
         else:
             frames_to_proceed = [int(s[0]) for s in segments]
             descriptions = list(descriptions.values())
             descriptions = [descriptions[i] for i in frames_to_proceed]
 
         print(frames_to_proceed, descriptions)
+        print(desc_indices)
+        
 
         # Step 5: Generate audio for each description        
         audio_arrays = []
@@ -129,7 +132,12 @@ class SeeAndTell:
             audio_arrays.append(audio_array)
 
         # Step 6: Combine clips
-        utils.mix_video_and_audio(video, audio_arrays, frames_to_proceed, save_to)
+        utils.mix_video_and_audio(
+            video, 
+            audio_arrays, 
+            frames_to_proceed, 
+            save_to
+        )
 
 
 def run_pipeline(

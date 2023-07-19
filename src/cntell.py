@@ -21,7 +21,7 @@ Executes service and produces an output video.
 import argparse
 
 
-if __name__ == '__main__':
+def main():
     argparser = argparse.ArgumentParser(
         description="See and Tell: A tool to describe videos using speech and image recognition.\n\n"
         "To run a pipeline you need to specify the path to the video to describe and the "
@@ -29,7 +29,6 @@ if __name__ == '__main__':
         "results, you can specify the path to save them to using the --temp argument. The --serie argument "
         "specifies the serie to recognize characters from. The --embeddings argument specifies "
         "the folder to search for embeddings for the serie in."
-        
     )
     argparser.add_argument("video", help="The path to the video to describe.")
     argparser.add_argument("output", help="The path to save the output video to.")
@@ -40,7 +39,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     if not hasattr(args, 'h') and not hasattr(args, 'help'):
-        from src import run_pipeline
+        from . import run_pipeline
         run_pipeline(
             args.video,
             args.output,
@@ -51,3 +50,6 @@ if __name__ == '__main__':
 
     import shutil
     shutil.rmtree(args.temp)
+
+if __name__ == '__main__':
+    main()

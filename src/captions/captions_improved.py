@@ -1,9 +1,9 @@
 from collections import Counter
-import warnings
 import numpy as np
 import pandas as pd
+import re
 
-from .noun_phrases_detection import extract_noun_phrases
+from src.captions.noun_phrases_detection import extract_noun_phrases, __prepare_str
 
 
 def build_captions_class_matrix(filtered_nps: list[list[list[str]]], predictions: list[list[str]]) \
@@ -67,7 +67,7 @@ def find_decided_captions(filtered_noun_phrases: list[list[list[str]]], predicti
     # this function will just return the captions and face_predictions with length 1
     decisive_list = [(noun_phrases[0], p[0]) for noun_phrases, p in zip(filtered_noun_phrases, predictions) if
                      len(noun_phrases) == len(p) == 1]
-    
+
     if len(decisive_list) == 0:
         # return an empty dictionary
         return {}
@@ -109,8 +109,9 @@ def np_prediction_score(noun_phrases: list[str],
     Returns:
         float: the score of the pair 
     """
+
     # set the default values of prediction_np_counter to an empty counter
-    
+
     def word_class_score(word: str):
         frequency_score = prediction_np_counter[prediction][word] if prediction in prediction_np_counter else 0
         decided_freq_score = decided_prediction_np[prediction][word] if prediction in decided_prediction_np else 0
@@ -130,9 +131,8 @@ def map_predictions(noun_phrases: list[list[str]],
                     prediction_np_counter: dict[str, Counter],
                     np_prediction_counter: dict[str, set],
                     decided_prediction_np: dict[str, Counter]) -> dict[str: list[str]]:
-
     # since it is not possible to have lists as indices, we need to convert noun phrases (as lists) to strings
-    # we need a mapping from the resultings strings to the original lists
+    # we need a mapping from the resulting strings to the original lists
     def to_str(tokens: list[str]) -> str:
         return (" ".join(tokens)).lower().strip()
 
@@ -166,9 +166,14 @@ def map_predictions(noun_phrases: list[list[str]],
     return mapping
 
 
-def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -> list[str]:
+def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -> tuple[list[str], list[int]]:
+    cleaned_captions = [__prepare_str(c) for c in captions]
 
-    nps = extract_noun_phrases(captions, select=True)
+    nps, indices = extract_noun_phrases(captions, select=True)
+    # don't forget to use to filter both predictions and captions
+    predictions = [predictions[i] for i in indices]
+    cleaned_captions = [cleaned_captions[i] for i in indices]
+
     noun_phrases, filtered_noun_phrases = list(map(list, zip(*nps)))
 
     # now we have the captions and the predictions ready
@@ -189,7 +194,7 @@ def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -
                                   np_prediction_counter,
                                   decided_prediction_np)
 
-        new_caption = captions[np_list_index]
+        new_caption = cleaned_captions[np_list_index]
 
         # for each pair of noun phrase and prediction
         for pred, np_tokens in mapping.items():
@@ -199,9 +204,11 @@ def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -
             text_to_replace = noun_phrases[np_list_index][np_index]
             # text_to_replace is currently a list of strings: must be joined
             text_to_replace = " ".join(text_to_replace).strip().lower()
+            # text_to_replace is likely to have a comma at the end of it
+            text_to_replace = re.sub(r'\s+\.+$', '', text_to_replace)
             # replace it in the caption
             new_caption = new_caption.replace(text_to_replace, pred)
 
         final_captions.append(new_caption)
 
-    return final_captions
+    return final_captions, indices

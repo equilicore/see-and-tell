@@ -24,7 +24,7 @@ class FaceRecognizer:
             self.embeddings[series.split('.')[0]] = json.load(open(os.path.join(folder, series)))
 
 
-    def __call__(self, image: list[str], caption: list[str], series: str) -> list[str]:
+    def __call__(self, image: list[str], caption: list[str], series: str) -> tuple[list[str], list[int], list]:
         """Uses face recognition to identify the characters in an image.
 
         Args:
@@ -46,10 +46,11 @@ class FaceRecognizer:
         # ]
 
         faces = recognize_faces(image, self.embeddings[series])
-
         self.logger.info(f"Recognized faces in images: {[len(face) for face in faces]}")
+        if len(faces) == 0:
+            return tuple([caption, [*range(len(caption))], faces])
 
-        return generate_captions(caption, faces), faces
+        return tuple([*generate_captions(caption, faces), faces])
 
         
 

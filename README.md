@@ -84,6 +84,14 @@ docker build -t seeandtell .
 docker run --rm -v /path/to/video/folder:/video seeandtell python -m cntell --help
 ```
 
+# Install
+
+The library might be installed as a Python package and CLI tool using the following command:
+
+```bash
+pip install https://github.com/teexone/see-and-tell/archive/refs/heads/main.zip
+```
+
 # License
 
 This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
