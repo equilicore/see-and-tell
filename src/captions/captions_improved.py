@@ -166,7 +166,7 @@ def map_predictions(noun_phrases: list[list[str]],
     return mapping
 
 
-def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -> list[str]:
+def generate_captions(captions: list[str], predictions: list[list[list[str]]]) -> tuple[list[str], list[int]]:
     cleaned_captions = [__prepare_str(c) for c in captions]
 
     nps, indices = extract_noun_phrases(captions, select=True)

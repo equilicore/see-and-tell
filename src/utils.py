@@ -163,7 +163,7 @@ def mix_video_and_audio(
 
         before_silence = AudioArrayClip(np.zeros((int(before_duration * audio_captions_sample_rate), 1)), audio_captions_sample_rate)        
         segment_silence = AudioArrayClip(np.zeros((int(segment_duration * input_audio_clip.fps), 2)), input_audio_clip.fps)
-        segment_repeated_frame = input_video_clip.get_frame(pause_at[current_segment])
+        segment_repeated_frame = input_video_clip.get_frame(pause_at[current_segment] + 1 / input_video_clip.fps)
         segment_repeated_clip = ImageClip(segment_repeated_frame, duration=segment_duration)
 
 
