@@ -46,8 +46,9 @@ class FaceRecognizer:
         # ]
 
         faces = recognize_faces(image, self.embeddings[series])
-
         self.logger.info(f"Recognized faces in images: {[len(face) for face in faces]}")
+        if len(faces) == 0:
+            return tuple([caption, [*range(len(caption))], faces])
 
         return tuple([*generate_captions(caption, faces), faces])
 

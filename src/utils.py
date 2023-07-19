@@ -137,14 +137,20 @@ def resize_array(arr, size):
     return arr
 
 
+def __mix_video_and_audio_ifempty(video_file, output_file):
+    run_ffmpeg(f"-i {video_file} -c:v copy -c:a copy -y {output_file}")
+
+
 def mix_video_and_audio(
     video_file: str,
     audio_captions: list[np.array],
-    # segments: list[tuple[int, int]],
     pause_at: list[int],
     output_file: str,
     audio_captions_sample_rate: int = 16000,
 ):
+    if len(audio_captions) == 0:
+        return __mix_video_and_audio_ifempty(video_file, output_file)
+    
      # Load the input video
     input_video_clip = VideoFileClip(video_file)
     input_audio_clip = AudioFileClip(video_file)
