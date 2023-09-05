@@ -14,10 +14,10 @@ setup(
     author_email="dev@alobanov.space, bouabidayhem@gmail.com",
     entry_points={
          'console_scripts': [
-            'cntell=cntell.cntell:main'
+            'cntell=cntell.run:main'
         ]
     },
-    package_dir={"cntell": "src"},
+    package_dir={"cntell": "cntell"},
     package_data={
         "embeddings": ["embeddings"],
         "": ["Dockerfile", "LICENSE", "README.md", "requirements.txt", "version.txt"]
@@ -40,6 +40,7 @@ setup(
         "facenet-pytorch",
         "moviepy",
         "pyannote.audio @ https://github.com/pyannote/pyannote-audio/archive/refs/heads/develop.zip",
+        "deprecation",
     ],
     url="https://github.com/teexone/see-and-tell"
 )

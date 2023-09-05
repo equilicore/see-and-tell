@@ -14,5 +14,7 @@ cntell_env
 *debug.py
 *.jpg
 *.p
+.vscode
+*.mp4
 
 
