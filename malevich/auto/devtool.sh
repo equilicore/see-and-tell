@@ -2,7 +2,7 @@
 
 # Check whether devtool is available
 
-if ! [ -x "$(command -v jls-devtool)" ]; then
+if ! [ -x "$(command -v jls-Pdevtool)" ]; then
     echo "Devtool is not installed. Please install devtool and try again."
     exit 1
 fi

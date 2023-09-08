@@ -16,5 +16,5 @@ cntell_env
 *.p
 .vscode
 *.mp4
-
-
+build/
+cntell.egg-info

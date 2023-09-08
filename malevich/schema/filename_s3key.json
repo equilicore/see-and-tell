@@ -1,0 +1,10 @@
+{
+    "properties": {
+        "filename": {
+            "type": "string"
+        },
+        "s3key": {
+            "type": "string"
+        }
+    }
+}
