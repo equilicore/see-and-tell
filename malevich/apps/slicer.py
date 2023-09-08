@@ -14,7 +14,7 @@ def slice_video(files: DF[Any], context: Context):
     )
     
     out: list[Slicer.FramesAndAudio] = []
-    for path in files['filename']:
+    for path in files.get('filename'):
         real_path = context.get_share_path(path)
         out.append(
             slicer.run(Slicer.VideoPath(video_path=real_path))  

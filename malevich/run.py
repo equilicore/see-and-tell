@@ -60,7 +60,7 @@ def run(path: str):
     try: delete_app('download_video')
     except: pass
     
-    create_collection_from_df(
+    source_collection = create_collection_from_df(
         pd.DataFrame(
             {
                 'filename': ['source.mp4'],
@@ -74,7 +74,7 @@ def run(path: str):
         'aws_access_key_id': aws_access_key,
         'aws_secret_access_key': aws_secret_key,
         'endpoint_url': s3_endpoint_url,
-        'bucket': s3_bucket
+        'bucket_name': s3_bucket
     }
     
     try:
@@ -108,17 +108,18 @@ def run(path: str):
     except:
         pass
     
+    cfg = Cfg(
+        collections={
+            'download_filename_s3': source_collection,
+        },
+        init_apps_update={
+            'connect_to_s3': True
+        }
+    ) 
     try:
-        cfg = Cfg(
-            collections={
-                'download_filename_s3': 'source_collection',
-            },
-            init_apps_update={
-                'download_from_collection': True
-            }
-        ) 
         create_cfg('see-and-tell-config', cfg)
     except:
+        update_cfg('see-and-tell-config', cfg)
         pass
         
    
