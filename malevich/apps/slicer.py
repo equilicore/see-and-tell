@@ -15,7 +15,6 @@ def slice_video(files: DF[Any], context: Context):
     real_save_dir = os.path.join(APP_DIR, save_dir)
     os.makedirs(real_save_dir, exist_ok=True)
     
-    
     # Will save
     # APP_DIR/save_dir/*.png
     # APP_DIR/save_dir/audio.wav
