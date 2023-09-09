@@ -41,6 +41,7 @@ setup(
         "moviepy",
         "pyannote.audio @ https://github.com/pyannote/pyannote-audio/archive/refs/heads/develop.zip",
         "deprecation",
+        "pydantic>=2.3"
     ],
     url="https://github.com/teexone/see-and-tell"
 )
