@@ -2,7 +2,7 @@ run-name: 'Build an image and push to Yandex Container Registry'
 on:
   push:
     branches:
-      - dev
+      - malevich
 jobs:
   build_and_push:
     name: 'Build and push'
