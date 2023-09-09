@@ -1,0 +1,7 @@
+{
+    "properties": {
+        "filename": {
+            "type": "string"
+        }
+    }
+}
