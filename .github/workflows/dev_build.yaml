@@ -1,0 +1,23 @@
+run-name: 'Build an image and push to Yandex Container Registry'
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  build_and_push:
+    name: 'Build and push'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Yandex CR Login
+      uses: yc-actions/yc-cr-login@v1
+      with: 
+        yc-sa-json-credentials: ${{secrets.YCR_CREDS_JSON}}
+    - name: Build and Push
+      run: |
+        cd malevich
+        docker build -t cr.yandex/${{secrets.YCR_REGISTRY}}/${{secrets.YCR_REPO}}:${{github.sha}}
+        docker push cr.yandex/${{secrets.YCR_REGISTRY}}/${{secrets.YCR_REPO}}:${{github.sha}}
+        echo 'IMAGE TAG: ${{github.sha}}'
+      
+      
