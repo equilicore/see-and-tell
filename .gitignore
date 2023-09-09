@@ -18,3 +18,4 @@ cntell_env
 *.mp4
 build/
 cntell.egg-info
+.env
