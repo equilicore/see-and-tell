@@ -20,6 +20,11 @@ parser.add_argument(
     help='`cntell` image reference', 
     default="cntell_malevich"
 )
+parser.add_argument(
+    '--yandex-cred',
+    type=str
+)
+
 args = parser.parse_args()
 
 
@@ -31,7 +36,7 @@ def prune():
     delete_schemes()
     
     
-def declare_apps(s3_config: dict):
+def declare_apps(s3_config: dict, image_auth=None):
     
     # Download video from S3
     create_app(
@@ -41,14 +46,16 @@ def declare_apps(s3_config: dict):
         app_cfg={
             **s3_config,
         },
-        image_ref=args.iU
+        image_ref=args.iU,
+        image_auth=image_auth
     )
     
     # Slice video into frames and audio
     create_app(
         app_id='slice_video',
         processor_id='slice_video',
-        image_ref=args.iC
+        image_ref=args.iC,
+        image_auth=image_auth
     )
     
     # [caption, audio] -> [caption]
@@ -59,6 +66,7 @@ def declare_apps(s3_config: dict):
             'expr': '0',
         },
         image_ref=args.iU,
+        image_auth=image_auth
     )
     
     # [caption, audio] -> [audio]
@@ -69,16 +77,18 @@ def declare_apps(s3_config: dict):
             'expr': '1',
         },
         image_ref=args.iU,
+        image_auth=image_auth
     )
     
     # Create captions for each frame
     create_app(
         app_id='describe',
-        processor_id='mock_describe_images',
+        processor_id='describe_images',
         app_cfg={
             'initialize_describe': True,
         },
-        image_ref=args.iC
+        image_ref=args.iC,
+        image_auth=image_auth
     )
 
     # Detect faces in each frame
@@ -90,7 +100,8 @@ def declare_apps(s3_config: dict):
             'serie': 'tbbt',
             'initialize_who': True,
         },
-        image_ref=args.iC
+        image_ref=args.iC,
+        image_auth=image_auth
     )
     
     # Enhance captions with detected faces
@@ -100,7 +111,8 @@ def declare_apps(s3_config: dict):
         app_cfg={
             'initiliaze_context': True,
         },
-        image_ref=args.iC
+        image_ref=args.iC,
+        image_auth=image_auth
     )
     
     # Listen for silence
@@ -110,14 +122,16 @@ def declare_apps(s3_config: dict):
         app_cfg={
             'initialize_listen': True,
         },
-        image_ref=args.iC
+        image_ref=args.iC,
+        image_auth=image_auth
     )
     
     # Choose captions to voice based on detected faces
     create_app(
         app_id='choose_captions',
         processor_id='choose_captions',
-        image_ref=args.iC
+        image_ref=args.iC,
+        image_auth=image_auth
     )
     
     # Voice captions
@@ -127,14 +141,45 @@ def declare_apps(s3_config: dict):
         app_cfg={
             'initialize_say': True,
         },
-        image_ref=args.iC
+        image_ref=args.iC,
+        image_auth=image_auth
     )
     
     # Produce a final video
     create_app(
         app_id='mix',
         processor_id='mix_all',
-        image_ref=args.iC
+        image_ref=args.iC,
+        image_auth=image_auth
+    )
+    
+    
+    create_app(
+        app_id='select_captions',
+        processor_id='locs',
+        app_cfg={
+            'column': 'captions',
+        },
+        image_ref=args.iU,
+    )
+    
+    
+    create_app(
+        app_id='select_timings',
+        processor_id='locs',
+        app_cfg={
+            'column': 'timings',
+        },
+        image_ref=args.iU,
+    )
+    
+    create_app(
+        app_id='save_to_s3',
+        processor_id='save_files_auto',
+        app_cfg={
+            **s3_config,
+        },
+        image_ref=args.iU,
     )
 
 
@@ -207,22 +252,41 @@ def declare_tasks():
     )
   
   
-    # Stage 4: Voice Captions
+    # Stage 4: Voice Captions    
+    
+    create_task(
+        task_id='select_captions',
+        app_id='select_captions',
+        tasks_depends=['choose_captions']
+    )
+    
     create_task(
         task_id='say',
         app_id='say',
-        tasks_depends=['choose_captions']
+        tasks_depends=['select_captions']
     )
     
     
     # Stage 5: Mix all together
     create_task(
+        task_id='select_timings',
+        app_id='select_timings',
+        tasks_depends=['choose_captions']
+    )
+    
+    
+    create_task(
         task_id='mix',
         app_id='mix',
-        tasks_depends=['say', 'download_video', 'choose_captions']
+        tasks_depends=['say', 'download_video', 'select_timings']
     )
-        
-      
+    
+    create_task(
+        task_id='finally_save',
+        app_id='save_to_s3',
+        tasks_depends=['mix']
+    )
+         
 
 
 def run(path: str):
@@ -232,6 +296,12 @@ def run(path: str):
     aws_secret_key = os.getenv('AWS_SECRET_KEY')
     s3_endpoint_url = os.getenv('S3_ENDPOINT_URL')
     s3_bucket = os.getenv('AWS_BUCKET')
+    
+    if args.yandex_cred:
+        with open(args.yandex_cred, 'r') as f:
+            yandex_cred = f.read()
+            
+    image_auth = ('json_key', yandex_cred) if args.yandex_cred else None
 
   
     assert malevich_user is not None and malevich_password is not None, \
@@ -315,7 +385,7 @@ def run(path: str):
     create_cfg('see-and-tell-config', cfg)        
    
     task_full(
-        task_id='choose_captions',
+        task_id='finally_save',
         cfg_id='see-and-tell-config',
         debug_mode=True,
         profile_mode='df_show'

@@ -5,7 +5,7 @@ import pandas as pd
 
 @jls.processor()
 def choose_captions(
-    caption_indices: DF['caption_indices'], 
+    caption_indices: DF['captions_indices'], 
     segments_: DF['segments'], 
     faces: DF['faces'], 
 ):

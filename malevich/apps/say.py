@@ -6,7 +6,7 @@ from cntell.core.say.caption import Say
 
 @jls.init(prepare=True)
 def initiliaze_say(context: Context):
-    if not context.app_cfg.get('initiliaze_voice', False):
+    if not context.app_cfg.get('initialize_say', False):
         return
     
     context.common = Say()
@@ -26,7 +26,7 @@ def voice_captions(captions: DF['captions'], context: Context):
     
         
     return pd.DataFrame({
-        'audio_arrays': [json.dumps(x) for x in audio_arrays]
+        'audio_arrays': [json.dumps(x.tolist()) for x in audio_arrays]
     })
        
        
