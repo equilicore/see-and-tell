@@ -1,0 +1,10 @@
+{
+    "properties": {
+        "start": {
+            "type": "number"
+        },
+        "end": {
+            "type": "number"
+        }
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "properties": {
+        "captions": {
+            "type": "string"
+        },
+        "indices": {
+            "type": "array"
+        }
+    }
+}

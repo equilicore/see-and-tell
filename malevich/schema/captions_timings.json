@@ -1,0 +1,10 @@
+{
+    "properties": {
+        "captions": {
+            "type": "string"
+        },
+        "timings": {
+            "type": "string"
+        }
+    }
+}

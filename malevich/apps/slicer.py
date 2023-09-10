@@ -22,6 +22,7 @@ def slice_video(files: DF[Any], context: Context):
         save_dir=real_save_dir,
         naming='f_%10d'
     )    
+    slicer.bound_run(context.run_id)
 
     
     frame_paths = []
@@ -47,7 +48,7 @@ def slice_video(files: DF[Any], context: Context):
         
     return [ 
         pd.DataFrame({
-            'filenames': return_frame_paths
+            'filename': return_frame_paths
         }),
         pd.DataFrame({
             'audio': return_audio_path
