@@ -21,8 +21,8 @@ parser.add_argument(
     default="cntell_malevich"
 )
 parser.add_argument(
-    '--yandex-cred',
-    type=str
+    '-H',
+    default='http://localhost:8080',
 )
 
 args = parser.parse_args()
@@ -47,8 +47,8 @@ def declare_apps(s3_config: dict, image_auth=None):
             **s3_config,
         },
         image_ref=args.iU,
-        image_auth=image_auth
     )
+
     
     # Slice video into frames and audio
     create_app(
@@ -66,7 +66,6 @@ def declare_apps(s3_config: dict, image_auth=None):
             'expr': '0',
         },
         image_ref=args.iU,
-        image_auth=image_auth
     )
     
     # [caption, audio] -> [audio]
@@ -77,13 +76,12 @@ def declare_apps(s3_config: dict, image_auth=None):
             'expr': '1',
         },
         image_ref=args.iU,
-        image_auth=image_auth
     )
     
     # Create captions for each frame
     create_app(
         app_id='describe',
-        processor_id='describe_images',
+        processor_id='mock_describe_images',
         app_cfg={
             'initialize_describe': True,
         },
@@ -185,7 +183,6 @@ def declare_apps(s3_config: dict, image_auth=None):
 
 def declare_tasks():
     # Stage 1: Download and slice
-    
     create_task(
         task_id='download_video',
         app_id='download_video',
@@ -197,9 +194,7 @@ def declare_tasks():
         tasks_depends=['download_video']
     )
     
-    
     # Stage 2.1.1: Describe Frames
-    
     create_task(
         task_id='select_filename',
         app_id='select_filename',
@@ -213,13 +208,11 @@ def declare_tasks():
     )
     
     # Stage 2.1.2: Detect Faces
-    
     create_task(
         task_id='faces',
         app_id='faces',
         tasks_depends=['select_filename']
     )
-    
     
     # Stage 2.1.3: Enhance Captions with Faces
     create_task(
@@ -228,9 +221,7 @@ def declare_tasks():
         tasks_depends=['faces', 'describe']
     )
     
-
     # Stage 2.2: Listen for Silence
-    
     create_task(
         task_id='select_audio',
         app_id='select_audio',
@@ -243,7 +234,6 @@ def declare_tasks():
         tasks_depends=['select_audio']
     )
   
-  
     # Stage 3: Choose Captions to Voice
     create_task(
         task_id='choose_captions',
@@ -251,9 +241,7 @@ def declare_tasks():
         tasks_depends=['enhance_with_context', 'listen', 'faces']
     )
   
-  
     # Stage 4: Voice Captions    
-    
     create_task(
         task_id='select_captions',
         app_id='select_captions',
@@ -266,14 +254,12 @@ def declare_tasks():
         tasks_depends=['select_captions']
     )
     
-    
     # Stage 5: Mix all together
     create_task(
         task_id='select_timings',
         app_id='select_timings',
         tasks_depends=['choose_captions']
     )
-    
     
     create_task(
         task_id='mix',
@@ -296,19 +282,14 @@ def run(path: str):
     aws_secret_key = os.getenv('AWS_SECRET_KEY')
     s3_endpoint_url = os.getenv('S3_ENDPOINT_URL')
     s3_bucket = os.getenv('AWS_BUCKET')
+    image_auth = (os.getenv('IMAGE_USER'), os.getenv('IMAGE_PASS'))
     
-    if args.yandex_cred:
-        with open(args.yandex_cred, 'r') as f:
-            yandex_cred = f.read()
-            
-    image_auth = ('json_key', yandex_cred) if args.yandex_cred else None
-
-  
+    set_verbose(True)
     assert malevich_user is not None and malevich_password is not None, \
         'MALEVICH_USER and MALEVICH_PASSWORD must be set as environment variables'
         
     update_core_credentials(malevich_user, malevich_password)
-    set_host_port('http://localhost:8080')
+    set_host_port(args.H)
     
     try: create_user()
     except: pass
@@ -346,7 +327,7 @@ def run(path: str):
         'bucket_name': s3_bucket
     }
     
-    declare_apps(s3_config)
+    declare_apps(s3_config, image_auth)
     declare_tasks()
 
     schema_ids = {}
